@@ -24,6 +24,7 @@ import { useResponsive } from '@/composables/useResponsive'
 import {
   DataAnalysis,
   TrendCharts,
+  Document,
   Timer,
   Money,
   Warning,
@@ -35,6 +36,7 @@ const { isMobile } = useResponsive()
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: DataAnalysis },
   { path: '/strategies', label: 'Strategies', icon: TrendCharts },
+  { path: '/templates', label: 'Templates', icon: Document },
   { path: '/backtest', label: 'Backtest', icon: Timer },
   { path: '/trading', label: 'Trading', icon: Money },
   { path: '/risk', label: 'Risk', icon: Warning },

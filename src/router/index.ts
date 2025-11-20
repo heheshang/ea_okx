@@ -21,6 +21,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Strategy Management', icon: 'TrendCharts' }
       },
       {
+        path: '/templates',
+        name: 'Templates',
+        component: () => import('@/views/Templates.vue'),
+        meta: { title: 'Strategy Templates', icon: 'Document' }
+      },
+      {
         path: '/strategies/:id',
         name: 'StrategyDetail',
         component: () => import('@/views/StrategyDetail.vue'),

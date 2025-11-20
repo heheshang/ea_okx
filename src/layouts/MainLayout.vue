@@ -25,6 +25,10 @@
           <el-icon><TrendCharts /></el-icon>
           <span>Strategies</span>
         </el-menu-item>
+        <el-menu-item index="/templates">
+          <el-icon><Document /></el-icon>
+          <span>Templates</span>
+        </el-menu-item>
         <el-menu-item index="/backtest">
           <el-icon><Timer /></el-icon>
           <span>Backtest</span>

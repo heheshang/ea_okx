@@ -7,11 +7,13 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    CreateTemplateDialog: typeof import('./components/CreateTemplateDialog.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCard: typeof import('element-plus/es')['ElCard']
     ElCol: typeof import('element-plus/es')['ElCol']
+    ElCollapseTransition: typeof import('element-plus/es')['ElCollapseTransition']
     ElContainer: typeof import('element-plus/es')['ElContainer']
     ElDatePicker: typeof import('element-plus/es')['ElDatePicker']
     ElDescriptions: typeof import('element-plus/es')['ElDescriptions']
@@ -33,6 +35,7 @@ declare module 'vue' {
     ElMenu: typeof import('element-plus/es')['ElMenu']
     ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
     ElOption: typeof import('element-plus/es')['ElOption']
+    ElPagination: typeof import('element-plus/es')['ElPagination']
     ElRadio: typeof import('element-plus/es')['ElRadio']
     ElRadioButton: typeof import('element-plus/es')['ElRadioButton']
     ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']
@@ -53,13 +56,21 @@ declare module 'vue' {
     ElTimelineItem: typeof import('element-plus/es')['ElTimelineItem']
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     FloatingActionButton: typeof import('./components/FloatingActionButton.vue')['default']
+    ImportTemplateDialog: typeof import('./components/ImportTemplateDialog.vue')['default']
     LazyImage: typeof import('./components/LazyImage.vue')['default']
     MobileBottomNav: typeof import('./components/MobileBottomNav.vue')['default']
     ResponsiveChart: typeof import('./components/ResponsiveChart.vue')['default']
     ResponsiveHeader: typeof import('./components/ResponsiveHeader.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    StrategyCard: typeof import('./components/StrategyCard.vue')['default']
     SwipeNavigation: typeof import('./components/SwipeNavigation.vue')['default']
+    TemplateBrowser: typeof import('./components/TemplateBrowser.vue')['default']
+    TemplateCard: typeof import('./components/TemplateCard.vue')['default']
+    TemplatePreviewDialog: typeof import('./components/TemplatePreviewDialog.vue')['default']
     VirtualList: typeof import('./components/VirtualList.vue')['default']
+  }
+  export interface ComponentCustomProperties {
+    vLoading: typeof import('element-plus/es')['ElLoadingDirective']
   }
 }

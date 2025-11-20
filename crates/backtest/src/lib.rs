@@ -6,7 +6,9 @@ pub mod portfolio;
 pub mod results;
 
 pub use cost_model::{CommissionModel, CostModel, SlippageModel};
-pub use engine::{BacktestConfig, BacktestEngine, PositionSizing, HistoricalDataSource, MockDataSource};
+pub use engine::{
+    BacktestConfig, BacktestEngine, HistoricalDataSource, MockDataSource, PositionSizing,
+};
 pub use error::{Error, Result};
 pub use events::{ExecutionEvent, Fill, MarketEvent, Trade};
 pub use portfolio::Portfolio;

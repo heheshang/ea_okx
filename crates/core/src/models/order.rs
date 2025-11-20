@@ -34,8 +34,8 @@ pub enum OrderType {
     Market,
     Limit,
     PostOnly,
-    Ioc,           // Immediate or Cancel
-    Fok,           // Fill or Kill
+    Ioc, // Immediate or Cancel
+    Fok, // Fill or Kill
     StopLoss,
     TakeProfit,
     TrailingStop,
@@ -96,55 +96,55 @@ impl FromStr for OrderStatus {
 pub struct Order {
     /// Internal order ID
     pub id: Uuid,
-    
+
     /// OKX order ID (after submission)
     pub okx_order_id: Option<String>,
-    
+
     /// Client-assigned order ID
     pub client_order_id: String,
-    
+
     /// Strategy ID that created this order
     pub strategy_id: Uuid,
-    
+
     /// Trading symbol
     pub symbol: Symbol,
-    
+
     /// Order side
     pub side: OrderSide,
-    
+
     /// Order type
     pub order_type: OrderType,
-    
+
     /// Order quantity
     pub quantity: Quantity,
-    
+
     /// Limit price (None for market orders)
     pub price: Option<Price>,
-    
+
     /// Average fill price
     pub avg_fill_price: Option<Price>,
-    
+
     /// Filled quantity
     pub filled_quantity: Quantity,
-    
+
     /// Order status
     pub status: OrderStatus,
-    
+
     /// Rejection reason (if rejected)
     pub reject_reason: Option<String>,
-    
+
     /// Order creation time
     pub created_at: DateTime<Utc>,
-    
+
     /// Submission time
     pub submitted_at: Option<DateTime<Utc>>,
-    
+
     /// First fill time
     pub first_fill_at: Option<DateTime<Utc>>,
-    
+
     /// Completion time
     pub completed_at: Option<DateTime<Utc>>,
-    
+
     /// Latency from submission to first fill (milliseconds)
     pub latency_ms: Option<i64>,
 }
@@ -179,7 +179,7 @@ impl Order {
     ) -> Self {
         let now = Utc::now();
         let id = Uuid::new_v4();
-        
+
         Self {
             id,
             okx_order_id: None,
@@ -211,7 +211,10 @@ impl Order {
     pub fn is_terminal(&self) -> bool {
         matches!(
             self.status,
-            OrderStatus::Filled | OrderStatus::Cancelled | OrderStatus::Rejected | OrderStatus::Failed
+            OrderStatus::Filled
+                | OrderStatus::Cancelled
+                | OrderStatus::Rejected
+                | OrderStatus::Failed
         )
     }
 
@@ -223,7 +226,7 @@ impl Order {
     /// Updates order status
     pub fn set_status(&mut self, status: OrderStatus) {
         self.status = status;
-        
+
         if self.is_terminal() && self.completed_at.is_none() {
             self.completed_at = Some(Utc::now());
         }
@@ -240,17 +243,17 @@ impl Order {
     pub fn update_fill(&mut self, filled_qty: Quantity, avg_price: Price) {
         self.filled_quantity = filled_qty;
         self.avg_fill_price = Some(avg_price);
-        
+
         if self.first_fill_at.is_none() {
             self.first_fill_at = Some(Utc::now());
-            
+
             // Calculate latency from submission to first fill
             if let Some(submitted_at) = self.submitted_at {
                 let duration = Utc::now().signed_duration_since(submitted_at);
                 self.latency_ms = Some(duration.num_milliseconds());
             }
         }
-        
+
         // Update status based on fill
         if filled_qty >= self.quantity {
             self.status = OrderStatus::Filled;
@@ -277,14 +280,23 @@ mod tests {
     fn test_order_type_from_str() {
         assert_eq!("market".parse::<OrderType>().unwrap(), OrderType::Market);
         assert_eq!("LIMIT".parse::<OrderType>().unwrap(), OrderType::Limit);
-        assert_eq!("stop_loss".parse::<OrderType>().unwrap(), OrderType::StopLoss);
+        assert_eq!(
+            "stop_loss".parse::<OrderType>().unwrap(),
+            OrderType::StopLoss
+        );
         assert!("invalid".parse::<OrderType>().is_err());
     }
 
     #[test]
     fn test_order_status_from_str() {
-        assert_eq!("created".parse::<OrderStatus>().unwrap(), OrderStatus::Created);
-        assert_eq!("FILLED".parse::<OrderStatus>().unwrap(), OrderStatus::Filled);
+        assert_eq!(
+            "created".parse::<OrderStatus>().unwrap(),
+            OrderStatus::Created
+        );
+        assert_eq!(
+            "FILLED".parse::<OrderStatus>().unwrap(),
+            OrderStatus::Filled
+        );
         assert!("invalid".parse::<OrderStatus>().is_err());
     }
 
@@ -293,7 +305,7 @@ mod tests {
         let strategy_id = Uuid::new_v4();
         let symbol = Symbol::new("BTC-USDT").unwrap();
         let quantity = Quantity::new(dec!(0.01)).unwrap();
-        
+
         let order = Order::new(
             strategy_id,
             symbol.clone(),
@@ -302,7 +314,7 @@ mod tests {
             quantity,
             None,
         );
-        
+
         assert_eq!(order.strategy_id, strategy_id);
         assert_eq!(order.symbol, symbol);
         assert_eq!(order.side, OrderSide::Buy);
@@ -321,27 +333,27 @@ mod tests {
             Quantity::new(dec!(0.01)).unwrap(),
             Some(Price::new(dec!(42000)).unwrap()),
         );
-        
+
         assert_eq!(order.status, OrderStatus::Created);
         assert!(!order.is_active());
-        
+
         let mut order = order;
         order.mark_submitted("okx123".to_string());
         assert_eq!(order.status, OrderStatus::Submitted);
         assert!(order.is_active());
         assert!(order.okx_order_id.is_some());
-        
+
         order.update_fill(
             Quantity::new(dec!(0.005)).unwrap(),
-            Price::new(dec!(41995)).unwrap()
+            Price::new(dec!(41995)).unwrap(),
         );
         assert_eq!(order.status, OrderStatus::Partial);
         assert!(order.is_active());
         assert!(order.first_fill_at.is_some());
-        
+
         order.update_fill(
             Quantity::new(dec!(0.01)).unwrap(),
-            Price::new(dec!(41998)).unwrap()
+            Price::new(dec!(41998)).unwrap(),
         );
         assert_eq!(order.status, OrderStatus::Filled);
         assert!(order.is_filled());
@@ -359,10 +371,10 @@ mod tests {
             Quantity::new(dec!(1.0)).unwrap(),
             Some(Price::new(dec!(2500)).unwrap()),
         );
-        
+
         let json = serde_json::to_string(&order).unwrap();
         let deserialized: Order = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(order.id, deserialized.id);
         assert_eq!(order.symbol.as_str(), deserialized.symbol.as_str());
         assert_eq!(order.side, deserialized.side);

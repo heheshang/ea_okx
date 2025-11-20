@@ -2,7 +2,7 @@ use crate::error::Result;
 use crate::order_manager::OrderManager;
 use chrono::{DateTime, Duration, Timelike, Utc};
 use ea_okx_core::models::{Order, OrderSide, OrderType};
-use ea_okx_core::{Symbol, Price, Quantity};
+use ea_okx_core::{Price, Quantity, Symbol};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
@@ -15,22 +15,22 @@ use uuid::Uuid;
 pub struct TwapConfig {
     /// Total quantity to execute
     pub total_quantity: Quantity,
-    
+
     /// Duration in minutes
     pub duration_minutes: u32,
-    
+
     /// Interval between slices in seconds
     pub slice_interval_seconds: u32,
-    
+
     /// Randomization percentage (0-25)
     pub randomization_pct: Decimal,
-    
+
     /// Order type for child orders
     pub order_type: OrderType,
-    
+
     /// Price offset in basis points
     pub price_offset_bps: i32,
-    
+
     /// Use market order for final slice
     pub aggressive_on_final: bool,
 }
@@ -54,19 +54,19 @@ impl Default for TwapConfig {
 pub struct VwapConfig {
     /// Total quantity to execute
     pub total_quantity: Quantity,
-    
+
     /// Start time
     pub start_time: DateTime<Utc>,
-    
+
     /// End time
     pub end_time: DateTime<Utc>,
-    
+
     /// Historical volume profile (hour -> volume percentage)
     pub volume_profile: Vec<(u32, Decimal)>,
-    
+
     /// Minimum slice size
     pub min_slice_size: Quantity,
-    
+
     /// Price offset in basis points
     pub price_offset_bps: i32,
 }
@@ -75,14 +75,32 @@ impl Default for VwapConfig {
     fn default() -> Self {
         // Default volume profile based on typical crypto market patterns
         let volume_profile = vec![
-            (0, dec!(2.0)), (1, dec!(1.5)), (2, dec!(1.0)), (3, dec!(1.0)),
-            (4, dec!(1.5)), (5, dec!(2.0)), (6, dec!(3.0)), (7, dec!(4.0)),
-            (8, dec!(5.0)), (9, dec!(6.0)), (10, dec!(7.0)), (11, dec!(6.0)),
-            (12, dec!(7.0)), (13, dec!(8.0)), (14, dec!(9.0)), (15, dec!(8.0)),
-            (16, dec!(7.0)), (17, dec!(6.0)), (18, dec!(5.0)), (19, dec!(4.0)),
-            (20, dec!(3.5)), (21, dec!(3.0)), (22, dec!(2.5)), (23, dec!(2.0)),
+            (0, dec!(2.0)),
+            (1, dec!(1.5)),
+            (2, dec!(1.0)),
+            (3, dec!(1.0)),
+            (4, dec!(1.5)),
+            (5, dec!(2.0)),
+            (6, dec!(3.0)),
+            (7, dec!(4.0)),
+            (8, dec!(5.0)),
+            (9, dec!(6.0)),
+            (10, dec!(7.0)),
+            (11, dec!(6.0)),
+            (12, dec!(7.0)),
+            (13, dec!(8.0)),
+            (14, dec!(9.0)),
+            (15, dec!(8.0)),
+            (16, dec!(7.0)),
+            (17, dec!(6.0)),
+            (18, dec!(5.0)),
+            (19, dec!(4.0)),
+            (20, dec!(3.5)),
+            (21, dec!(3.0)),
+            (22, dec!(2.5)),
+            (23, dec!(2.0)),
         ];
-        
+
         Self {
             total_quantity: Quantity::new(dec!(1.0)).unwrap(),
             start_time: Utc::now(),
@@ -160,12 +178,12 @@ impl TwapExecutor {
         );
 
         let start_time = Utc::now();
-        
+
         // Calculate number of slices
         let total_seconds = self.config.duration_minutes as u64 * 60;
         let slice_count = (total_seconds / self.config.slice_interval_seconds as u64).max(1);
         let base_slice_size = self.config.total_quantity.as_decimal() / Decimal::from(slice_count);
-        
+
         debug!("TWAP: {} slices of ~{} each", slice_count, base_slice_size);
 
         let mut remaining = self.config.total_quantity.as_decimal();
@@ -183,17 +201,19 @@ impl TwapExecutor {
             // Apply randomization
             let random_factor = if self.config.randomization_pct > Decimal::ZERO {
                 let random_val = (rand::random::<f64>() - 0.5) * 2.0; // -1 to 1
-                dec!(1.0) + (Decimal::from_f64_retain(random_val).unwrap_or(Decimal::ZERO) 
-                    * self.config.randomization_pct / dec!(100.0))
+                dec!(1.0)
+                    + (Decimal::from_f64_retain(random_val).unwrap_or(Decimal::ZERO)
+                        * self.config.randomization_pct
+                        / dec!(100.0))
             } else {
                 dec!(1.0)
             };
 
             let slice_size = (base_slice_size * random_factor).min(remaining);
-            
+
             // Determine if this is the final slice
             let is_final = slice_num == slice_count - 1 || slice_size >= remaining;
-            
+
             // Choose order type
             let order_type = if is_final && self.config.aggressive_on_final {
                 OrderType::Market
@@ -205,7 +225,10 @@ impl TwapExecutor {
             let slice_price = self.calculate_price_with_offset(current_price);
 
             // Execute slice
-            match self.execute_slice(slice_size, slice_price, order_type).await {
+            match self
+                .execute_slice(slice_size, slice_price, order_type)
+                .await
+            {
                 Ok(executed_qty) => {
                     let executed_dec = executed_qty.as_decimal();
                     total_executed += executed_dec;
@@ -222,8 +245,13 @@ impl TwapExecutor {
                         success: true,
                     });
 
-                    debug!("TWAP slice {}/{} executed: {} @ {}", 
-                        slice_num + 1, slice_count, executed_dec, slice_price.as_decimal());
+                    debug!(
+                        "TWAP slice {}/{} executed: {} @ {}",
+                        slice_num + 1,
+                        slice_count,
+                        executed_dec,
+                        slice_price.as_decimal()
+                    );
                 }
                 Err(e) => {
                     warn!("TWAP slice {}/{} failed: {}", slice_num + 1, slice_count, e);
@@ -243,8 +271,9 @@ impl TwapExecutor {
             // Wait for next slice (unless it's the last one)
             if !is_final {
                 tokio::time::sleep(tokio::time::Duration::from_secs(
-                    self.config.slice_interval_seconds as u64
-                )).await;
+                    self.config.slice_interval_seconds as u64,
+                ))
+                .await;
             }
         }
 
@@ -265,7 +294,10 @@ impl TwapExecutor {
 
         info!(
             "TWAP completed: executed {} @ avg {} ({}/{} slices)",
-            total_executed, avg_price.as_decimal(), slices_executed, slice_count
+            total_executed,
+            avg_price.as_decimal(),
+            slices_executed,
+            slice_count
         );
 
         Ok(result)
@@ -301,7 +333,7 @@ impl TwapExecutor {
     fn calculate_price_with_offset(&self, base_price: Price) -> Price {
         let offset_decimal = Decimal::from(self.config.price_offset_bps) / dec!(10000.0);
         let offset_amount = base_price.as_decimal() * offset_decimal;
-        
+
         let adjusted_price = match self.side {
             OrderSide::Buy => base_price.as_decimal() + offset_amount,
             OrderSide::Sell => base_price.as_decimal() - offset_amount,
@@ -349,7 +381,10 @@ impl VwapExecutor {
         let duration_hours = duration.num_hours() as u32;
 
         // Calculate quantity per hour based on volume profile
-        let total_volume_weight: Decimal = self.config.volume_profile.iter()
+        let total_volume_weight: Decimal = self
+            .config
+            .volume_profile
+            .iter()
             .map(|(_, weight)| weight)
             .sum();
 
@@ -364,10 +399,11 @@ impl VwapExecutor {
             }
 
             // Get volume weight for this hour
-            let hour_of_day = (self.config.start_time + Duration::hours(hour as i64))
-                .hour();
-            
-            let volume_weight = self.config.volume_profile
+            let hour_of_day = (self.config.start_time + Duration::hours(hour as i64)).hour();
+
+            let volume_weight = self
+                .config
+                .volume_profile
                 .iter()
                 .find(|(h, _)| *h == hour_of_day)
                 .map(|(_, w)| *w)
@@ -381,7 +417,7 @@ impl VwapExecutor {
 
             // Execute slice
             let slice_price = self.calculate_price_with_offset(current_price);
-            
+
             match self.execute_slice(slice_size, slice_price).await {
                 Ok(executed_qty) => {
                     let executed_dec = executed_qty.as_decimal();
@@ -390,8 +426,12 @@ impl VwapExecutor {
                     remaining -= executed_dec;
                     slices_executed += 1;
 
-                    debug!("VWAP hour {} executed: {} @ {}", 
-                        hour, executed_dec, slice_price.as_decimal());
+                    debug!(
+                        "VWAP hour {} executed: {} @ {}",
+                        hour,
+                        executed_dec,
+                        slice_price.as_decimal()
+                    );
                 }
                 Err(e) => {
                     warn!("VWAP hour {} failed: {}", hour, e);
@@ -411,8 +451,9 @@ impl VwapExecutor {
         };
 
         // Calculate VWAP deviation
-        let vwap_deviation_bps = ((avg_price.as_decimal() - current_price.as_decimal()) 
-            / current_price.as_decimal()) * dec!(10000.0);
+        let vwap_deviation_bps = ((avg_price.as_decimal() - current_price.as_decimal())
+            / current_price.as_decimal())
+            * dec!(10000.0);
 
         let result = VwapResult {
             total_executed: Quantity::new(total_executed)?,
@@ -424,7 +465,9 @@ impl VwapExecutor {
 
         info!(
             "VWAP completed: executed {} @ avg {} (deviation: {} bps)",
-            total_executed, avg_price.as_decimal(), vwap_deviation_bps
+            total_executed,
+            avg_price.as_decimal(),
+            vwap_deviation_bps
         );
 
         Ok(result)
@@ -442,7 +485,7 @@ impl VwapExecutor {
         );
 
         let order_id = self.order_manager.submit_order(order).await?;
-        
+
         // Wait for fill (simplified)
         tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
@@ -453,7 +496,7 @@ impl VwapExecutor {
     fn calculate_price_with_offset(&self, base_price: Price) -> Price {
         let offset_decimal = Decimal::from(self.config.price_offset_bps) / dec!(10000.0);
         let offset_amount = base_price.as_decimal() * offset_decimal;
-        
+
         let adjusted_price = match self.side {
             OrderSide::Buy => base_price.as_decimal() + offset_amount,
             OrderSide::Sell => base_price.as_decimal() - offset_amount,
@@ -466,11 +509,11 @@ impl VwapExecutor {
 // Use a simple random implementation since we don't have rand crate
 mod rand {
     use std::cell::Cell;
-    
+
     thread_local! {
         static SEED: Cell<u64> = Cell::new(0x123456789abcdef);
     }
-    
+
     pub fn random<T: From<f64>>() -> T {
         SEED.with(|seed| {
             let s = seed.get();

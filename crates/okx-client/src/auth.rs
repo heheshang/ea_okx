@@ -32,7 +32,11 @@ impl Credentials {
     ///
     /// let credentials = Credentials::new("api-key", "secret-key", "passphrase");
     /// ```
-    pub fn new(api_key: impl Into<String>, secret_key: impl Into<String>, passphrase: impl Into<String>) -> Self {
+    pub fn new(
+        api_key: impl Into<String>,
+        secret_key: impl Into<String>,
+        passphrase: impl Into<String>,
+    ) -> Self {
         Self {
             api_key: api_key.into(),
             secret_key: secret_key.into(),
@@ -60,16 +64,22 @@ impl Credentials {
     /// * `method` - HTTP method (GET, POST, etc.)
     /// * `request_path` - API endpoint path with query parameters
     /// * `body` - Request body (empty string for GET requests)
-    pub fn sign(&self, timestamp: &str, method: &str, request_path: &str, body: &str) -> Result<String> {
+    pub fn sign(
+        &self,
+        timestamp: &str,
+        method: &str,
+        request_path: &str,
+        body: &str,
+    ) -> Result<String> {
         let prehash = format!("{}{}{}{}", timestamp, method, request_path, body);
-        
+
         let mut mac = HmacSha256::new_from_slice(self.secret_key.as_bytes())
             .map_err(|e| Error::AuthError(format!("Invalid secret key: {}", e)))?;
-        
+
         mac.update(prehash.as_bytes());
         let result = mac.finalize();
         let signature = general_purpose::STANDARD.encode(result.into_bytes());
-        
+
         Ok(signature)
     }
 
@@ -93,9 +103,16 @@ impl RequestSigner {
     /// Signs a request and returns authentication headers
     ///
     /// Returns a tuple of (timestamp, signature)
-    pub fn sign_request(&self, method: &str, request_path: &str, body: &str) -> Result<(String, String)> {
+    pub fn sign_request(
+        &self,
+        method: &str,
+        request_path: &str,
+        body: &str,
+    ) -> Result<(String, String)> {
         let timestamp = Credentials::timestamp();
-        let signature = self.credentials.sign(&timestamp, method, request_path, body)?;
+        let signature = self
+            .credentials
+            .sign(&timestamp, method, request_path, body)?;
         Ok((timestamp, signature))
     }
 
@@ -132,8 +149,10 @@ mod tests {
     fn test_sign() {
         let creds = Credentials::new("test-key", "test-secret", "test-pass");
         let timestamp = "2024-01-01T00:00:00.000Z";
-        let signature = creds.sign(timestamp, "GET", "/api/v5/account/balance", "").unwrap();
-        
+        let signature = creds
+            .sign(timestamp, "GET", "/api/v5/account/balance", "")
+            .unwrap();
+
         // Signature should be base64 encoded
         assert!(!signature.is_empty());
         assert!(general_purpose::STANDARD.decode(&signature).is_ok());
@@ -143,9 +162,11 @@ mod tests {
     fn test_request_signer() {
         let creds = Credentials::new("test-key", "test-secret", "test-pass");
         let signer = RequestSigner::new(creds);
-        
-        let (timestamp, signature) = signer.sign_request("GET", "/api/v5/account/balance", "").unwrap();
-        
+
+        let (timestamp, signature) = signer
+            .sign_request("GET", "/api/v5/account/balance", "")
+            .unwrap();
+
         assert!(!timestamp.is_empty());
         assert!(!signature.is_empty());
         assert_eq!(signer.api_key(), "test-key");
@@ -155,9 +176,23 @@ mod tests {
     fn test_sign_with_body() {
         let creds = Credentials::new("test-key", "test-secret", "test-pass");
         let body = r#"{"instId":"BTC-USDT","tdMode":"cash"}"#;
-        let signature1 = creds.sign("2024-01-01T00:00:00.000Z", "POST", "/api/v5/trade/order", body).unwrap();
-        let signature2 = creds.sign("2024-01-01T00:00:00.000Z", "POST", "/api/v5/trade/order", "").unwrap();
-        
+        let signature1 = creds
+            .sign(
+                "2024-01-01T00:00:00.000Z",
+                "POST",
+                "/api/v5/trade/order",
+                body,
+            )
+            .unwrap();
+        let signature2 = creds
+            .sign(
+                "2024-01-01T00:00:00.000Z",
+                "POST",
+                "/api/v5/trade/order",
+                "",
+            )
+            .unwrap();
+
         // Different bodies should produce different signatures
         assert_ne!(signature1, signature2);
     }

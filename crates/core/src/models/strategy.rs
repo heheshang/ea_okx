@@ -35,7 +35,10 @@ impl FromStr for StrategyStatus {
             "paused" => Ok(StrategyStatus::Paused),
             "stopped" => Ok(StrategyStatus::Stopped),
             "archived" => Ok(StrategyStatus::Archived),
-            _ => Err(Error::ValidationError(format!("Invalid strategy status: {}", s))),
+            _ => Err(Error::ValidationError(format!(
+                "Invalid strategy status: {}",
+                s
+            ))),
         }
     }
 }
@@ -45,54 +48,56 @@ impl FromStr for StrategyStatus {
 pub struct StrategyConfig {
     /// Strategy parameters (JSON)
     pub parameters: JsonValue,
-    
+
     /// Risk limits
     pub risk_limits: JsonValue,
-    
+
     /// Allowed trading symbols
     pub symbols: Vec<Symbol>,
-    
+
     /// Allocated capital
     pub allocated_capital: Decimal,
-    
+
     /// Maximum position size
     pub max_position_size: Decimal,
-    
+
     /// Maximum leverage
     pub max_leverage: Decimal,
 }
 
 impl StrategyConfig {
     /// Creates a new strategy configuration
-    pub fn new(
-        parameters: JsonValue,
-        symbols: Vec<Symbol>,
-        allocated_capital: Decimal,
-    ) -> Self {
+    pub fn new(parameters: JsonValue, symbols: Vec<Symbol>, allocated_capital: Decimal) -> Self {
         Self {
             parameters,
             risk_limits: serde_json::json!({}),
             symbols,
             allocated_capital,
             max_position_size: allocated_capital * Decimal::from_str("0.2").unwrap(), // 20% default
-            max_leverage: Decimal::from(3), // 3x default
+            max_leverage: Decimal::from(3),                                           // 3x default
         }
     }
 
     /// Validates the configuration
     pub fn validate(&self) -> Result<()> {
         if self.allocated_capital <= Decimal::ZERO {
-            return Err(Error::ValidationError("Allocated capital must be positive".to_string()));
+            return Err(Error::ValidationError(
+                "Allocated capital must be positive".to_string(),
+            ));
         }
-        
+
         if self.max_leverage <= Decimal::ZERO || self.max_leverage > Decimal::from(10) {
-            return Err(Error::ValidationError("Leverage must be between 0 and 10".to_string()));
+            return Err(Error::ValidationError(
+                "Leverage must be between 0 and 10".to_string(),
+            ));
         }
-        
+
         if self.symbols.is_empty() {
-            return Err(Error::ValidationError("At least one symbol is required".to_string()));
+            return Err(Error::ValidationError(
+                "At least one symbol is required".to_string(),
+            ));
         }
-        
+
         Ok(())
     }
 }
@@ -102,37 +107,37 @@ impl StrategyConfig {
 pub struct Strategy {
     /// Strategy ID
     pub id: Uuid,
-    
+
     /// Strategy name
     pub name: String,
-    
+
     /// Description
     pub description: Option<String>,
-    
+
     /// Strategy type
     pub strategy_type: String,
-    
+
     /// Version
     pub version: String,
-    
+
     /// Configuration
     pub config: StrategyConfig,
-    
+
     /// Current status
     pub status: StrategyStatus,
-    
+
     /// Created by user ID
     pub created_by: Uuid,
-    
+
     /// Creation time
     pub created_at: DateTime<Utc>,
-    
+
     /// Last update time
     pub updated_at: DateTime<Utc>,
-    
+
     /// Deployment time
     pub deployed_at: Option<DateTime<Utc>>,
-    
+
     /// Stop time
     pub stopped_at: Option<DateTime<Utc>>,
 }
@@ -147,9 +152,9 @@ impl Strategy {
         created_by: Uuid,
     ) -> Result<Self> {
         config.validate()?;
-        
+
         let now = Utc::now();
-        
+
         Ok(Self {
             id: Uuid::new_v4(),
             name,
@@ -170,12 +175,14 @@ impl Strategy {
     pub fn set_status(&mut self, status: StrategyStatus) {
         self.status = status;
         self.updated_at = Utc::now();
-        
+
         if status == StrategyStatus::Active && self.deployed_at.is_none() {
             self.deployed_at = Some(Utc::now());
         }
-        
-        if matches!(status, StrategyStatus::Stopped | StrategyStatus::Archived) && self.stopped_at.is_none() {
+
+        if matches!(status, StrategyStatus::Stopped | StrategyStatus::Archived)
+            && self.stopped_at.is_none()
+        {
             self.stopped_at = Some(Utc::now());
         }
     }
@@ -187,7 +194,10 @@ impl Strategy {
 
     /// Checks if strategy can trade
     pub fn can_trade(&self) -> bool {
-        matches!(self.status, StrategyStatus::Active | StrategyStatus::PaperTrading)
+        matches!(
+            self.status,
+            StrategyStatus::Active | StrategyStatus::PaperTrading
+        )
     }
 }
 
@@ -198,8 +208,14 @@ mod tests {
 
     #[test]
     fn test_strategy_status_from_str() {
-        assert_eq!("draft".parse::<StrategyStatus>().unwrap(), StrategyStatus::Draft);
-        assert_eq!("ACTIVE".parse::<StrategyStatus>().unwrap(), StrategyStatus::Active);
+        assert_eq!(
+            "draft".parse::<StrategyStatus>().unwrap(),
+            StrategyStatus::Draft
+        );
+        assert_eq!(
+            "ACTIVE".parse::<StrategyStatus>().unwrap(),
+            StrategyStatus::Active
+        );
         assert!("invalid".parse::<StrategyStatus>().is_err());
     }
 
@@ -211,7 +227,7 @@ mod tests {
             symbols.clone(),
             dec!(10000),
         );
-        
+
         assert_eq!(config.symbols, symbols);
         assert_eq!(config.allocated_capital, dec!(10000));
         assert_eq!(config.max_position_size, dec!(2000)); // 20%
@@ -221,24 +237,16 @@ mod tests {
     #[test]
     fn test_strategy_config_validate() {
         let symbols = vec![Symbol::new("BTC-USDT").unwrap()];
-        let config = StrategyConfig::new(
-            serde_json::json!({}),
-            symbols,
-            dec!(10000),
-        );
-        
+        let config = StrategyConfig::new(serde_json::json!({}), symbols, dec!(10000));
+
         assert!(config.validate().is_ok());
     }
 
     #[test]
     fn test_strategy_config_validate_invalid_capital() {
         let symbols = vec![Symbol::new("BTC-USDT").unwrap()];
-        let mut config = StrategyConfig::new(
-            serde_json::json!({}),
-            symbols,
-            dec!(10000),
-        );
-        
+        let mut config = StrategyConfig::new(serde_json::json!({}), symbols, dec!(10000));
+
         config.allocated_capital = Decimal::ZERO;
         assert!(config.validate().is_err());
     }
@@ -246,20 +254,17 @@ mod tests {
     #[test]
     fn test_strategy_new() {
         let symbols = vec![Symbol::new("BTC-USDT").unwrap()];
-        let config = StrategyConfig::new(
-            serde_json::json!({"period": 20}),
-            symbols,
-            dec!(10000),
-        );
-        
+        let config = StrategyConfig::new(serde_json::json!({"period": 20}), symbols, dec!(10000));
+
         let strategy = Strategy::new(
             "MA Crossover".to_string(),
             "trend_following".to_string(),
             "1.0.0".to_string(),
             config,
             Uuid::new_v4(),
-        ).unwrap();
-        
+        )
+        .unwrap();
+
         assert_eq!(strategy.name, "MA Crossover");
         assert_eq!(strategy.status, StrategyStatus::Draft);
         assert!(!strategy.is_active());
@@ -269,34 +274,31 @@ mod tests {
     #[test]
     fn test_strategy_lifecycle() {
         let symbols = vec![Symbol::new("BTC-USDT").unwrap()];
-        let config = StrategyConfig::new(
-            serde_json::json!({}),
-            symbols,
-            dec!(10000),
-        );
-        
+        let config = StrategyConfig::new(serde_json::json!({}), symbols, dec!(10000));
+
         let mut strategy = Strategy::new(
             "Test Strategy".to_string(),
             "test".to_string(),
             "1.0.0".to_string(),
             config,
             Uuid::new_v4(),
-        ).unwrap();
-        
+        )
+        .unwrap();
+
         assert_eq!(strategy.status, StrategyStatus::Draft);
-        
+
         strategy.set_status(StrategyStatus::Backtesting);
         assert_eq!(strategy.status, StrategyStatus::Backtesting);
-        
+
         strategy.set_status(StrategyStatus::Active);
         assert!(strategy.is_active());
         assert!(strategy.can_trade());
         assert!(strategy.deployed_at.is_some());
-        
+
         strategy.set_status(StrategyStatus::Paused);
         assert!(!strategy.is_active());
         assert!(!strategy.can_trade());
-        
+
         strategy.set_status(StrategyStatus::Stopped);
         assert!(strategy.stopped_at.is_some());
     }

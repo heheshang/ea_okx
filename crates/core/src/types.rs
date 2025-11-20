@@ -26,7 +26,7 @@ impl Symbol {
     /// ```
     pub fn new(s: impl Into<String>) -> Result<Self> {
         let s = s.into();
-        
+
         // Validate format: BASE-QUOTE
         if !s.contains('-') {
             return Err(Error::InvalidSymbol(format!(
@@ -275,7 +275,7 @@ mod tests {
     fn test_price_ordering() {
         let price1 = Price::new(dec!(100)).unwrap();
         let price2 = Price::new(dec!(200)).unwrap();
-        
+
         assert!(price1 < price2);
         assert!(price2 > price1);
     }
@@ -284,7 +284,7 @@ mod tests {
     fn test_quantity_ordering() {
         let qty1 = Quantity::new(dec!(1.0)).unwrap();
         let qty2 = Quantity::new(dec!(2.0)).unwrap();
-        
+
         assert!(qty1 < qty2);
         assert!(qty2 > qty1);
     }

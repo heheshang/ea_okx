@@ -28,8 +28,8 @@ pub enum Channel {
     #[serde(rename = "candle1D")]
     Candle1d,
     /// Order book channels
-    Books5,    // Top 5 levels
-    Books50,   // Top 50 levels
+    Books5, // Top 5 levels
+    Books50,    // Top 50 levels
     BooksL2Tbt, // Level 2 tick-by-tick
     /// Recent trades
     Trades,
@@ -48,13 +48,10 @@ impl Channel {
     pub fn is_public(&self) -> bool {
         !matches!(
             self,
-            Channel::Account
-                | Channel::Positions
-                | Channel::Orders
-                | Channel::BalanceAndPosition
+            Channel::Account | Channel::Positions | Channel::Orders | Channel::BalanceAndPosition
         )
     }
-    
+
     /// Get channel name as string
     pub fn as_str(&self) -> &str {
         match self {
@@ -92,7 +89,7 @@ impl SubscriptionRequest {
             instrument_id: Some(instrument_id.into()),
         }
     }
-    
+
     /// Create a subscription request without instrument ID (for account channels)
     pub fn new_account(channel: Channel) -> Self {
         Self {
@@ -100,7 +97,7 @@ impl SubscriptionRequest {
             instrument_id: None,
         }
     }
-    
+
     /// Convert to JSON for WebSocket message
     pub fn to_json(&self) -> Value {
         if let Some(inst_id) = &self.instrument_id {
@@ -133,9 +130,15 @@ pub enum WebSocketEvent {
     /// Unsubscription confirmation
     Unsubscribe(SubscriptionResponse),
     /// Error event
-    Error { code: String, msg: String },
+    Error {
+        code: String,
+        msg: String,
+    },
     /// Login/authentication response
-    Login { code: String, msg: String },
+    Login {
+        code: String,
+        msg: String,
+    },
     /// Market data events
     Ticker(TickerData),
     Candle(CandleData),
@@ -155,31 +158,39 @@ impl WebSocketEvent {
             match event {
                 "subscribe" => {
                     let response: SubscriptionResponse = serde_json::from_value(value.clone())
-                        .map_err(|e| Error::ParseError(format!("Invalid subscribe response: {}", e)))?;
+                        .map_err(|e| {
+                            Error::ParseError(format!("Invalid subscribe response: {}", e))
+                        })?;
                     return Ok(WebSocketEvent::Subscribe(response));
                 }
                 "unsubscribe" => {
                     let response: SubscriptionResponse = serde_json::from_value(value.clone())
-                        .map_err(|e| Error::ParseError(format!("Invalid unsubscribe response: {}", e)))?;
+                        .map_err(|e| {
+                            Error::ParseError(format!("Invalid unsubscribe response: {}", e))
+                        })?;
                     return Ok(WebSocketEvent::Unsubscribe(response));
                 }
                 "error" => {
-                    let code = value.get("code")
+                    let code = value
+                        .get("code")
                         .and_then(|v| v.as_str())
                         .unwrap_or("unknown")
                         .to_string();
-                    let msg = value.get("msg")
+                    let msg = value
+                        .get("msg")
                         .and_then(|v| v.as_str())
                         .unwrap_or("Unknown error")
                         .to_string();
                     return Ok(WebSocketEvent::Error { code, msg });
                 }
                 "login" => {
-                    let code = value.get("code")
+                    let code = value
+                        .get("code")
                         .and_then(|v| v.as_str())
                         .unwrap_or("unknown")
                         .to_string();
-                    let msg = value.get("msg")
+                    let msg = value
+                        .get("msg")
                         .and_then(|v| v.as_str())
                         .unwrap_or("")
                         .to_string();
@@ -190,22 +201,26 @@ impl WebSocketEvent {
                 }
             }
         }
-        
+
         // Check if it's a data push (has "arg" and "data" fields)
         if let Some(arg) = value.get("arg") {
-            let channel = arg.get("channel")
+            let channel = arg
+                .get("channel")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| Error::ParseError("Missing channel field".to_string()))?;
-            
-            let data = value.get("data")
+
+            let data = value
+                .get("data")
                 .ok_or_else(|| Error::ParseError("Missing data field".to_string()))?;
-            
+
             return Self::parse_data_event(channel, data);
         }
-        
-        Err(Error::ParseError("Invalid WebSocket message format".to_string()))
+
+        Err(Error::ParseError(
+            "Invalid WebSocket message format".to_string(),
+        ))
     }
-    
+
     /// Parse data event based on channel type
     fn parse_data_event(channel: &str, data: &Value) -> Result<Self> {
         match channel {
@@ -307,17 +322,29 @@ impl CandleData {
     /// Parse into typed values
     pub fn parse(&self) -> Result<ParsedCandle> {
         Ok(ParsedCandle {
-            timestamp: self.timestamp.parse()
+            timestamp: self
+                .timestamp
+                .parse()
                 .map_err(|e| Error::ParseError(format!("Invalid timestamp: {}", e)))?,
-            open: self.open.parse()
+            open: self
+                .open
+                .parse()
                 .map_err(|e| Error::ParseError(format!("Invalid open price: {}", e)))?,
-            high: self.high.parse()
+            high: self
+                .high
+                .parse()
                 .map_err(|e| Error::ParseError(format!("Invalid high price: {}", e)))?,
-            low: self.low.parse()
+            low: self
+                .low
+                .parse()
                 .map_err(|e| Error::ParseError(format!("Invalid low price: {}", e)))?,
-            close: self.close.parse()
+            close: self
+                .close
+                .parse()
                 .map_err(|e| Error::ParseError(format!("Invalid close price: {}", e)))?,
-            volume: self.volume.parse()
+            volume: self
+                .volume
+                .parse()
                 .map_err(|e| Error::ParseError(format!("Invalid volume: {}", e)))?,
             is_confirmed: self.confirm == "1",
         })
@@ -355,19 +382,22 @@ pub struct BookLevel(pub String, pub String, pub String, pub String);
 impl BookLevel {
     /// Get price
     pub fn price(&self) -> Result<Decimal> {
-        self.0.parse()
+        self.0
+            .parse()
             .map_err(|e| Error::ParseError(format!("Invalid price: {}", e)))
     }
-    
+
     /// Get quantity
     pub fn quantity(&self) -> Result<Decimal> {
-        self.1.parse()
+        self.1
+            .parse()
             .map_err(|e| Error::ParseError(format!("Invalid quantity: {}", e)))
     }
-    
+
     /// Get number of orders
     pub fn num_orders(&self) -> Result<u32> {
-        self.3.parse()
+        self.3
+            .parse()
             .map_err(|e| Error::ParseError(format!("Invalid num_orders: {}", e)))
     }
 }
@@ -514,37 +544,37 @@ pub struct OrderData {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_channel_is_public() {
         assert!(Channel::Tickers.is_public());
         assert!(Channel::Candle1m.is_public());
         assert!(Channel::Books5.is_public());
         assert!(Channel::Trades.is_public());
-        
+
         assert!(!Channel::Account.is_public());
         assert!(!Channel::Positions.is_public());
         assert!(!Channel::Orders.is_public());
     }
-    
+
     #[test]
     fn test_subscription_request_to_json() {
         let req = SubscriptionRequest::new(Channel::Tickers, "BTC-USDT");
         let json = req.to_json();
-        
+
         assert_eq!(json["channel"], "tickers");
         assert_eq!(json["instId"], "BTC-USDT");
     }
-    
+
     #[test]
     fn test_subscription_request_account() {
         let req = SubscriptionRequest::new_account(Channel::Account);
         let json = req.to_json();
-        
+
         assert_eq!(json["channel"], "account");
         assert!(json.get("instId").is_none());
     }
-    
+
     #[test]
     fn test_parse_candle_data() {
         let candle = CandleData {
@@ -558,13 +588,13 @@ mod tests {
             volume_usd: Some("5050000.00".to_string()),
             confirm: "1".to_string(),
         };
-        
+
         let parsed = candle.parse().unwrap();
         assert_eq!(parsed.timestamp, 1234567890000);
         assert_eq!(parsed.open, Decimal::new(5000000, 2));
         assert_eq!(parsed.is_confirmed, true);
     }
-    
+
     #[test]
     fn test_book_level_parsing() {
         let level = BookLevel(
@@ -573,12 +603,12 @@ mod tests {
             "0".to_string(),
             "10".to_string(),
         );
-        
+
         assert_eq!(level.price().unwrap(), Decimal::new(5000050, 2));
         assert_eq!(level.quantity().unwrap(), Decimal::new(15, 1));
         assert_eq!(level.num_orders().unwrap(), 10);
     }
-    
+
     #[test]
     fn test_websocket_event_parse_error() {
         let json = serde_json::json!({
@@ -586,7 +616,7 @@ mod tests {
             "code": "60012",
             "msg": "Invalid request"
         });
-        
+
         let event = WebSocketEvent::from_json(&json).unwrap();
         match event {
             WebSocketEvent::Error { code, msg } => {
@@ -596,7 +626,7 @@ mod tests {
             _ => panic!("Expected Error event"),
         }
     }
-    
+
     #[test]
     fn test_websocket_event_login() {
         let json = serde_json::json!({
@@ -604,7 +634,7 @@ mod tests {
             "code": "0",
             "msg": "Login successful"
         });
-        
+
         let event = WebSocketEvent::from_json(&json).unwrap();
         match event {
             WebSocketEvent::Login { code, msg } => {

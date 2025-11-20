@@ -7,10 +7,10 @@ use serde::Deserialize;
 pub struct ApiResponse<T> {
     /// Response code ("0" for success)
     pub code: String,
-    
+
     /// Response message
     pub msg: String,
-    
+
     /// Response data
     #[serde(default)]
     pub data: Vec<T>,
@@ -29,10 +29,10 @@ impl<T> ApiResponse<T> {
 pub struct OrderResponse {
     /// Order ID
     pub ord_id: String,
-    
+
     /// Client order ID
     pub cl_ord_id: String,
-    
+
     /// Order state
     pub state: String,
 }

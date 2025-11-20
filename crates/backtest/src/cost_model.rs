@@ -8,10 +8,10 @@ use serde::{Deserialize, Serialize};
 pub struct CommissionModel {
     /// Maker fee rate (e.g., 0.001 for 0.1%)
     pub maker_rate: Decimal,
-    
+
     /// Taker fee rate (e.g., 0.0015 for 0.15%)
     pub taker_rate: Decimal,
-    
+
     /// Minimum commission per trade
     pub min_commission: Decimal,
 }
@@ -44,21 +44,19 @@ impl CommissionModel {
     }
 
     /// Calculate commission for a trade
-    pub fn calculate(
-        &self,
-        order_type: OrderType,
-        price: Decimal,
-        quantity: Decimal,
-    ) -> Decimal {
+    pub fn calculate(&self, order_type: OrderType, price: Decimal, quantity: Decimal) -> Decimal {
         let notional = price * quantity;
-        
+
         let rate = match order_type {
             OrderType::Limit | OrderType::PostOnly => self.maker_rate,
             OrderType::Market | OrderType::Ioc | OrderType::Fok => self.taker_rate,
             // Conditional orders use taker rate when triggered
-            OrderType::StopLoss | OrderType::TakeProfit | OrderType::TrailingStop | OrderType::Iceberg => self.taker_rate,
+            OrderType::StopLoss
+            | OrderType::TakeProfit
+            | OrderType::TrailingStop
+            | OrderType::Iceberg => self.taker_rate,
         };
-        
+
         let commission = notional * rate;
         commission.max(self.min_commission)
     }
@@ -69,10 +67,10 @@ impl CommissionModel {
 pub struct SlippageModel {
     /// Fixed slippage in basis points (e.g., 5 = 0.05%)
     pub fixed_bps: Decimal,
-    
+
     /// Price impact coefficient (linear model)
     pub impact_coefficient: Decimal,
-    
+
     /// Minimum slippage amount
     pub min_slippage: Decimal,
 }
@@ -80,7 +78,7 @@ pub struct SlippageModel {
 impl Default for SlippageModel {
     fn default() -> Self {
         Self {
-            fixed_bps: dec!(5.0),      // 5 basis points = 0.05%
+            fixed_bps: dec!(5.0), // 5 basis points = 0.05%
             impact_coefficient: dec!(0.0001),
             min_slippage: dec!(0.0),
         }
@@ -90,7 +88,7 @@ impl Default for SlippageModel {
 impl SlippageModel {
     pub fn conservative() -> Self {
         Self {
-            fixed_bps: dec!(10.0),     // 10 bps = 0.1%
+            fixed_bps: dec!(10.0), // 10 bps = 0.1%
             impact_coefficient: dec!(0.0002),
             min_slippage: dec!(0.0),
         }
@@ -98,7 +96,7 @@ impl SlippageModel {
 
     pub fn aggressive() -> Self {
         Self {
-            fixed_bps: dec!(3.0),      // 3 bps = 0.03%
+            fixed_bps: dec!(3.0), // 3 bps = 0.03%
             impact_coefficient: dec!(0.00005),
             min_slippage: dec!(0.0),
         }
@@ -114,19 +112,19 @@ impl SlippageModel {
     ) -> Decimal {
         // Fixed component
         let fixed_slippage = price * self.fixed_bps / dec!(10000.0);
-        
+
         // Impact component (based on order size relative to avg volume)
         let volume_ratio = if avg_volume > Decimal::ZERO {
             quantity / avg_volume
         } else {
             Decimal::ZERO
         };
-        
+
         let impact_slippage = price * self.impact_coefficient * volume_ratio;
-        
+
         // Total slippage (always unfavorable)
         let total_slippage = fixed_slippage + impact_slippage;
-        
+
         total_slippage.max(self.min_slippage)
     }
 
@@ -143,15 +141,10 @@ impl SlippageModel {
     }
 
     /// Apply slippage to a price
-    pub fn apply_slippage(
-        &self,
-        side: OrderSide,
-        price: Decimal,
-        slippage: Decimal,
-    ) -> Decimal {
+    pub fn apply_slippage(&self, side: OrderSide, price: Decimal, slippage: Decimal) -> Decimal {
         match side {
-            OrderSide::Buy => price + slippage,   // Buy higher
-            OrderSide::Sell => price - slippage,  // Sell lower
+            OrderSide::Buy => price + slippage,  // Buy higher
+            OrderSide::Sell => price - slippage, // Sell lower
         }
     }
 }
@@ -198,20 +191,18 @@ impl CostModel {
     ) -> (Decimal, Decimal, Decimal) {
         // Calculate commission
         let commission = self.commission.calculate(order_type, price, quantity);
-        
+
         // Calculate slippage
         let slippage = match order_type {
-            OrderType::Market => {
-                self.slippage.calculate_market(side, price, quantity, avg_volume)
-            }
-            _ => {
-                self.slippage.calculate_limit(side, price, quantity)
-            }
+            OrderType::Market => self
+                .slippage
+                .calculate_market(side, price, quantity, avg_volume),
+            _ => self.slippage.calculate_limit(side, price, quantity),
         };
-        
+
         // Calculate effective execution price
         let execution_price = self.slippage.apply_slippage(side, price, slippage);
-        
+
         (execution_price, commission, slippage)
     }
 }
@@ -223,36 +214,32 @@ mod tests {
     #[test]
     fn test_commission_calculation() {
         let model = CommissionModel::okx_spot();
-        
+
         // Maker order: 0.1%
         let commission = model.calculate(
             OrderType::Limit,
-            dec!(50000.0),  // $50,000
-            dec!(1.0),      // 1 BTC
+            dec!(50000.0), // $50,000
+            dec!(1.0),     // 1 BTC
         );
         assert_eq!(commission, dec!(50.0)); // $50 commission
-        
+
         // Taker order: 0.15%
-        let commission = model.calculate(
-            OrderType::Market,
-            dec!(50000.0),
-            dec!(1.0),
-        );
+        let commission = model.calculate(OrderType::Market, dec!(50000.0), dec!(1.0));
         assert_eq!(commission, dec!(75.0)); // $75 commission
     }
 
     #[test]
     fn test_slippage_calculation() {
         let model = SlippageModel::default();
-        
+
         // Market order with 10% volume
         let slippage = model.calculate_market(
             OrderSide::Buy,
             dec!(50000.0),
-            dec!(0.1),      // 0.1 BTC
-            dec!(1.0),      // 1 BTC avg volume
+            dec!(0.1), // 0.1 BTC
+            dec!(1.0), // 1 BTC avg volume
         );
-        
+
         // Fixed: 50000 * 0.0005 = 25
         // Impact: 50000 * 0.0001 * 0.1 = 0.5
         // Total: 25.5
@@ -262,28 +249,20 @@ mod tests {
     #[test]
     fn test_apply_slippage() {
         let model = SlippageModel::default();
-        
+
         // Buy side - price increases
-        let buy_price = model.apply_slippage(
-            OrderSide::Buy,
-            dec!(50000.0),
-            dec!(10.0),
-        );
+        let buy_price = model.apply_slippage(OrderSide::Buy, dec!(50000.0), dec!(10.0));
         assert_eq!(buy_price, dec!(50010.0));
-        
+
         // Sell side - price decreases
-        let sell_price = model.apply_slippage(
-            OrderSide::Sell,
-            dec!(50000.0),
-            dec!(10.0),
-        );
+        let sell_price = model.apply_slippage(OrderSide::Sell, dec!(50000.0), dec!(10.0));
         assert_eq!(sell_price, dec!(49990.0));
     }
 
     #[test]
     fn test_total_cost() {
         let model = CostModel::okx_spot_conservative();
-        
+
         let (exec_price, commission, slippage) = model.calculate_total_cost(
             OrderType::Market,
             OrderSide::Buy,
@@ -291,7 +270,7 @@ mod tests {
             dec!(1.0),
             dec!(10.0),
         );
-        
+
         // Should have commission and slippage
         assert!(commission > Decimal::ZERO);
         assert!(slippage > Decimal::ZERO);

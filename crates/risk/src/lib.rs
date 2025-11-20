@@ -4,7 +4,7 @@ pub mod var;
 
 pub use error::{Error, Result};
 pub use validators::{
-    PreTradeValidator, RiskLimits, PortfolioState, ValidationResult,
-    RiskViolation, ViolationSeverity,
+    PortfolioState, PreTradeValidator, RiskLimits, RiskViolation, ValidationResult,
+    ViolationSeverity,
 };
 pub use var::{VarCalculator, VarConfig, VarMethod, VarResult};

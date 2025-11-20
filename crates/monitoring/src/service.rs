@@ -69,13 +69,13 @@ impl MonitoringService {
                     "{}: {} (threshold: {})",
                     rule.name, value, rule.condition.threshold
                 );
-                
+
                 let alert = Alert::new(rule, value, message);
                 alerts.insert(alert.id, alert.clone());
-                
+
                 // Update last triggered time
                 rule.last_triggered = Some(Utc::now());
-                
+
                 tracing::warn!(
                     rule_name = %rule.name,
                     metric_name = %metric_name,
@@ -92,7 +92,8 @@ impl MonitoringService {
     /// Get all active (unacknowledged) alerts
     pub async fn get_active_alerts(&self) -> Vec<Alert> {
         let alerts = self.active_alerts.read().await;
-        alerts.values()
+        alerts
+            .values()
             .filter(|a| !a.acknowledged)
             .cloned()
             .collect()
@@ -107,7 +108,7 @@ impl MonitoringService {
     /// Acknowledge an alert
     pub async fn acknowledge_alert(&self, alert_id: Uuid, user: impl Into<String>) -> Result<()> {
         let mut alerts = self.active_alerts.write().await;
-        
+
         if let Some(alert) = alerts.get_mut(&alert_id) {
             alert.acknowledge(user);
             tracing::info!(
@@ -130,7 +131,7 @@ impl MonitoringService {
     /// Perform health check on all registered components
     pub async fn perform_health_check(&self) -> HealthReport {
         let checkers = self.health_checks.read().await;
-        
+
         let mut checks = Vec::new();
         for checker in checkers.iter() {
             let check = checker.check().await;
@@ -195,12 +196,12 @@ impl DatabaseHealthChecker {
 impl HealthChecker for DatabaseHealthChecker {
     async fn check(&self) -> HealthCheck {
         let start = std::time::Instant::now();
-        
+
         // Simulate database check
         tokio::time::sleep(std::time::Duration::from_millis(10)).await;
-        
+
         let elapsed = start.elapsed().as_millis() as u64;
-        
+
         // Example logic: healthy if response < 50ms
         if elapsed < 50 {
             HealthCheck::healthy(&self.name, "Database connection OK", elapsed)
@@ -233,12 +234,12 @@ impl ExchangeHealthChecker {
 impl HealthChecker for ExchangeHealthChecker {
     async fn check(&self) -> HealthCheck {
         let start = std::time::Instant::now();
-        
+
         // Simulate exchange API check
         tokio::time::sleep(std::time::Duration::from_millis(20)).await;
-        
+
         let elapsed = start.elapsed().as_millis() as u64;
-        
+
         if elapsed < 100 {
             HealthCheck::healthy(&self.name, "Exchange API responsive", elapsed)
         } else {
@@ -267,7 +268,7 @@ mod tests {
     #[tokio::test]
     async fn test_register_alert_rule() {
         let service = MonitoringService::new();
-        
+
         let condition = AlertCondition {
             metric_name: "latency".to_string(),
             operator: ComparisonOperator::GreaterThan,
@@ -283,7 +284,7 @@ mod tests {
         );
 
         service.register_alert_rule(rule.clone()).await.unwrap();
-        
+
         let rules = service.get_alert_rules().await;
         assert_eq!(rules.len(), 1);
         assert_eq!(rules[0].name, "High Latency");
@@ -292,7 +293,7 @@ mod tests {
     #[tokio::test]
     async fn test_evaluate_metric() {
         let service = MonitoringService::new();
-        
+
         let condition = AlertCondition {
             metric_name: "error_rate".to_string(),
             operator: ComparisonOperator::GreaterThan,
@@ -308,10 +309,10 @@ mod tests {
         );
 
         service.register_alert_rule(rule).await.unwrap();
-        
+
         // Trigger the alert
         service.evaluate_metric("error_rate", 0.05).await.unwrap();
-        
+
         let active_alerts = service.get_active_alerts().await;
         assert_eq!(active_alerts.len(), 1);
         assert_eq!(active_alerts[0].severity, AlertSeverity::Critical);
@@ -320,7 +321,7 @@ mod tests {
     #[tokio::test]
     async fn test_acknowledge_alert() {
         let service = MonitoringService::new();
-        
+
         let condition = AlertCondition {
             metric_name: "cpu_usage".to_string(),
             operator: ComparisonOperator::GreaterThan,
@@ -337,13 +338,13 @@ mod tests {
 
         service.register_alert_rule(rule).await.unwrap();
         service.evaluate_metric("cpu_usage", 95.0).await.unwrap();
-        
+
         let active_alerts = service.get_active_alerts().await;
         assert_eq!(active_alerts.len(), 1);
-        
+
         let alert_id = active_alerts[0].id;
         service.acknowledge_alert(alert_id, "admin").await.unwrap();
-        
+
         let active_alerts_after = service.get_active_alerts().await;
         assert_eq!(active_alerts_after.len(), 0);
     }
@@ -351,16 +352,22 @@ mod tests {
     #[tokio::test]
     async fn test_health_check() {
         let service = MonitoringService::new();
-        
+
         let db_checker = Box::new(DatabaseHealthChecker::new());
         let exchange_checker = Box::new(ExchangeHealthChecker::new());
-        
+
         service.register_health_checker(db_checker).await.unwrap();
-        service.register_health_checker(exchange_checker).await.unwrap();
-        
+        service
+            .register_health_checker(exchange_checker)
+            .await
+            .unwrap();
+
         let report = service.perform_health_check().await;
-        
+
         assert_eq!(report.components.len(), 2);
-        assert!(matches!(report.overall_status, HealthStatus::Healthy | HealthStatus::Degraded));
+        assert!(matches!(
+            report.overall_status,
+            HealthStatus::Healthy | HealthStatus::Degraded
+        ));
     }
 }

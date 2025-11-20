@@ -34,43 +34,43 @@ impl FromStr for PositionSide {
 pub struct Position {
     /// Position ID
     pub id: Uuid,
-    
+
     /// Strategy ID
     pub strategy_id: Uuid,
-    
+
     /// Trading symbol
     pub symbol: Symbol,
-    
+
     /// Position side
     pub side: PositionSide,
-    
+
     /// Position quantity
     pub quantity: Quantity,
-    
+
     /// Average entry price
     pub avg_entry_price: Price,
-    
+
     /// Current market price
     pub current_price: Price,
-    
+
     /// Unrealized profit/loss
     pub unrealized_pnl: Decimal,
-    
+
     /// Realized profit/loss
     pub realized_pnl: Decimal,
-    
+
     /// Margin requirement
     pub margin: Option<Decimal>,
-    
+
     /// Leverage ratio
     pub leverage: Option<Decimal>,
-    
+
     /// Liquidation price
     pub liquidation_price: Option<Price>,
-    
+
     /// Position open time
     pub opened_at: DateTime<Utc>,
-    
+
     /// Last update time
     pub last_updated: DateTime<Utc>,
 }
@@ -85,7 +85,7 @@ impl Position {
         entry_price: Price,
     ) -> Self {
         let now = Utc::now();
-        
+
         Self {
             id: Uuid::new_v4(),
             strategy_id,
@@ -115,7 +115,7 @@ impl Position {
     pub fn calculate_unrealized_pnl(&self) -> Decimal {
         let price_diff = self.current_price.as_decimal() - self.avg_entry_price.as_decimal();
         let qty = self.quantity.as_decimal();
-        
+
         match self.side {
             PositionSide::Long => price_diff * qty,
             PositionSide::Short => -price_diff * qty,
@@ -147,7 +147,10 @@ mod tests {
     #[test]
     fn test_position_side_from_str() {
         assert_eq!("long".parse::<PositionSide>().unwrap(), PositionSide::Long);
-        assert_eq!("SHORT".parse::<PositionSide>().unwrap(), PositionSide::Short);
+        assert_eq!(
+            "SHORT".parse::<PositionSide>().unwrap(),
+            PositionSide::Short
+        );
         assert_eq!("net".parse::<PositionSide>().unwrap(), PositionSide::Net);
         assert!("invalid".parse::<PositionSide>().is_err());
     }
@@ -158,9 +161,15 @@ mod tests {
         let symbol = Symbol::new("BTC-USDT").unwrap();
         let quantity = Quantity::new(dec!(0.1)).unwrap();
         let entry_price = Price::new(dec!(42000)).unwrap();
-        
-        let position = Position::new(strategy_id, symbol.clone(), PositionSide::Long, quantity, entry_price);
-        
+
+        let position = Position::new(
+            strategy_id,
+            symbol.clone(),
+            PositionSide::Long,
+            quantity,
+            entry_price,
+        );
+
         assert_eq!(position.strategy_id, strategy_id);
         assert_eq!(position.symbol, symbol);
         assert_eq!(position.side, PositionSide::Long);
@@ -177,10 +186,10 @@ mod tests {
             Quantity::new(dec!(0.1)).unwrap(),
             Price::new(dec!(40000)).unwrap(),
         );
-        
+
         let mut position = position;
         position.update_price(Price::new(dec!(42000)).unwrap());
-        
+
         // Long position: (42000 - 40000) * 0.1 = 200
         assert_eq!(position.unrealized_pnl, dec!(200));
     }
@@ -194,10 +203,10 @@ mod tests {
             Quantity::new(dec!(0.1)).unwrap(),
             Price::new(dec!(42000)).unwrap(),
         );
-        
+
         let mut position = position;
         position.update_price(Price::new(dec!(40000)).unwrap());
-        
+
         // Short position: -(40000 - 42000) * 0.1 = 200
         assert_eq!(position.unrealized_pnl, dec!(200));
     }
@@ -211,10 +220,10 @@ mod tests {
             Quantity::new(dec!(5.0)).unwrap(),
             Price::new(dec!(2500)).unwrap(),
         );
-        
+
         assert_eq!(position.entry_value(), dec!(12500));
         assert_eq!(position.position_value(), dec!(12500));
-        
+
         let mut position = position;
         position.update_price(Price::new(dec!(2600)).unwrap());
         assert_eq!(position.position_value(), dec!(13000));

@@ -90,11 +90,7 @@ impl OrderStateMachine {
     }
 
     /// Attempt to transition to a new state
-    pub fn transition(
-        &mut self,
-        to_state: OrderState,
-        reason: impl Into<String>,
-    ) -> Result<()> {
+    pub fn transition(&mut self, to_state: OrderState, reason: impl Into<String>) -> Result<()> {
         if !self.is_valid_transition(to_state) {
             return Err(Error::InvalidStateTransition(format!(
                 "Cannot transition from {:?} to {:?} for order {}",
@@ -193,7 +189,7 @@ mod tests {
     fn test_state_machine_creation() {
         let order_id = Uuid::new_v4();
         let sm = OrderStateMachine::new(order_id);
-        
+
         assert_eq!(sm.current_state, OrderState::Created);
         assert_eq!(sm.transitions.len(), 0);
         assert!(sm.is_active());
@@ -202,19 +198,25 @@ mod tests {
     #[test]
     fn test_valid_transitions() {
         let mut sm = OrderStateMachine::new(Uuid::new_v4());
-        
+
         // Created -> Validated
-        assert!(sm.transition(OrderState::Validated, "Passed validation").is_ok());
+        assert!(sm
+            .transition(OrderState::Validated, "Passed validation")
+            .is_ok());
         assert_eq!(sm.current_state, OrderState::Validated);
         assert_eq!(sm.transitions.len(), 1);
-        
+
         // Validated -> Submitted
-        assert!(sm.transition(OrderState::Submitted, "Sent to exchange").is_ok());
+        assert!(sm
+            .transition(OrderState::Submitted, "Sent to exchange")
+            .is_ok());
         assert_eq!(sm.current_state, OrderState::Submitted);
-        
+
         // Submitted -> Acknowledged
-        assert!(sm.transition(OrderState::Acknowledged, "Exchange confirmed").is_ok());
-        
+        assert!(sm
+            .transition(OrderState::Acknowledged, "Exchange confirmed")
+            .is_ok());
+
         // Acknowledged -> Filled
         assert!(sm.transition(OrderState::Filled, "Order filled").is_ok());
         assert_eq!(sm.current_state, OrderState::Filled);
@@ -224,18 +226,20 @@ mod tests {
     #[test]
     fn test_invalid_transitions() {
         let mut sm = OrderStateMachine::new(Uuid::new_v4());
-        
+
         // Can't go directly from Created to Filled
         assert!(sm.transition(OrderState::Filled, "Invalid").is_err());
-        
+
         // Transition to Filled first
         sm.transition(OrderState::Validated, "OK").unwrap();
         sm.transition(OrderState::Submitted, "OK").unwrap();
         sm.transition(OrderState::Acknowledged, "OK").unwrap();
         sm.transition(OrderState::Filled, "OK").unwrap();
-        
+
         // Can't transition from terminal state
-        assert!(sm.transition(OrderState::Cancelled, "Terminal state").is_err());
+        assert!(sm
+            .transition(OrderState::Cancelled, "Terminal state")
+            .is_err());
     }
 
     #[test]
@@ -245,7 +249,7 @@ mod tests {
         assert!(OrderState::Rejected.is_terminal());
         assert!(OrderState::Failed.is_terminal());
         assert!(OrderState::Expired.is_terminal());
-        
+
         assert!(!OrderState::Created.is_terminal());
         assert!(!OrderState::Validated.is_terminal());
         assert!(!OrderState::Submitted.is_terminal());
@@ -258,7 +262,7 @@ mod tests {
         assert!(OrderState::Submitted.can_cancel());
         assert!(OrderState::Acknowledged.can_cancel());
         assert!(OrderState::PartiallyFilled.can_cancel());
-        
+
         assert!(!OrderState::Filled.can_cancel());
         assert!(!OrderState::Cancelled.can_cancel());
         assert!(!OrderState::Rejected.can_cancel());

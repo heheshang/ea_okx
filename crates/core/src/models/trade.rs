@@ -11,46 +11,46 @@ use uuid::Uuid;
 pub struct Trade {
     /// Trade ID
     pub id: Uuid,
-    
+
     /// OKX order ID
     pub okx_order_id: Option<String>,
-    
+
     /// Client order ID
     pub client_order_id: String,
-    
+
     /// Strategy ID
     pub strategy_id: Uuid,
-    
+
     /// Trading symbol
     pub symbol: Symbol,
-    
+
     /// Order side
     pub side: OrderSide,
-    
+
     /// Order type
     pub order_type: OrderType,
-    
+
     /// Executed quantity
     pub quantity: Quantity,
-    
+
     /// Execution price
     pub price: Price,
-    
+
     /// Trading commission
     pub commission: Decimal,
-    
+
     /// Commission asset
     pub commission_asset: String,
-    
+
     /// Realized profit/loss
     pub realized_pnl: Option<Decimal>,
-    
+
     /// Slippage in basis points
     pub slippage_bps: Option<i32>,
-    
+
     /// Execution timestamp
     pub executed_at: DateTime<Utc>,
-    
+
     /// Latency from signal to execution (milliseconds)
     pub latency_ms: Option<i64>,
 }
@@ -117,7 +117,7 @@ mod tests {
         let symbol = Symbol::new("BTC-USDT").unwrap();
         let quantity = Quantity::new(dec!(0.1)).unwrap();
         let price = Price::new(dec!(42000)).unwrap();
-        
+
         let trade = Trade::new(
             strategy_id,
             "ord_123".to_string(),
@@ -128,7 +128,7 @@ mod tests {
             price,
             dec!(4.2),
         );
-        
+
         assert_eq!(trade.strategy_id, strategy_id);
         assert_eq!(trade.symbol, symbol);
         assert_eq!(trade.side, OrderSide::Buy);
@@ -147,7 +147,7 @@ mod tests {
             Price::new(dec!(42000)).unwrap(),
             dec!(4.2),
         );
-        
+
         // 0.1 * 42000 = 4200
         assert_eq!(trade.trade_value(), dec!(4200));
     }
@@ -164,7 +164,7 @@ mod tests {
             Price::new(dec!(42000)).unwrap(),
             dec!(4.2),
         );
-        
+
         // Buy: gross + commission = 4200 + 4.2 = 4204.2
         assert_eq!(trade.net_value(), dec!(4204.2));
     }
@@ -181,7 +181,7 @@ mod tests {
             Price::new(dec!(42000)).unwrap(),
             dec!(4.2),
         );
-        
+
         // Sell: gross - commission = 4200 - 4.2 = 4195.8
         assert_eq!(trade.net_value(), dec!(4195.8));
     }
@@ -198,7 +198,7 @@ mod tests {
             Price::new(dec!(42000)).unwrap(),
             dec!(4.2),
         );
-        
+
         // Effective price = 4204.2 / 0.1 = 42042
         assert_eq!(trade.effective_price(), dec!(42042));
     }
@@ -215,10 +215,10 @@ mod tests {
             Price::new(dec!(2500)).unwrap(),
             dec!(2.5),
         );
-        
+
         let json = serde_json::to_string(&trade).unwrap();
         let deserialized: Trade = serde_json::from_str(&json).unwrap();
-        
+
         assert_eq!(trade.id, deserialized.id);
         assert_eq!(trade.symbol.as_str(), deserialized.symbol.as_str());
         assert_eq!(trade.side, deserialized.side);

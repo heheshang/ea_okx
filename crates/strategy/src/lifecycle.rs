@@ -70,7 +70,7 @@ impl StrategyLifecycle {
 
     fn is_valid_transition(&self, to_state: StrategyState) -> bool {
         use StrategyState::*;
-        
+
         matches!(
             (self.current_state, to_state),
             (Draft, Validating)
@@ -112,13 +112,17 @@ mod tests {
     #[test]
     fn test_valid_transition() {
         let mut lifecycle = StrategyLifecycle::new();
-        assert!(lifecycle.transition(StrategyState::Validating, "Start validation").is_ok());
+        assert!(lifecycle
+            .transition(StrategyState::Validating, "Start validation")
+            .is_ok());
         assert_eq!(lifecycle.current_state(), StrategyState::Validating);
     }
 
     #[test]
     fn test_invalid_transition() {
         let mut lifecycle = StrategyLifecycle::new();
-        assert!(lifecycle.transition(StrategyState::Active, "Invalid").is_err());
+        assert!(lifecycle
+            .transition(StrategyState::Active, "Invalid")
+            .is_err());
     }
 }

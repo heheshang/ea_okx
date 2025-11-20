@@ -21,7 +21,11 @@ pub struct HealthCheck {
 }
 
 impl HealthCheck {
-    pub fn healthy(component: impl Into<String>, message: impl Into<String>, response_time_ms: u64) -> Self {
+    pub fn healthy(
+        component: impl Into<String>,
+        message: impl Into<String>,
+        response_time_ms: u64,
+    ) -> Self {
         Self {
             component: component.into(),
             status: HealthStatus::Healthy,
@@ -31,7 +35,11 @@ impl HealthCheck {
         }
     }
 
-    pub fn degraded(component: impl Into<String>, message: impl Into<String>, response_time_ms: u64) -> Self {
+    pub fn degraded(
+        component: impl Into<String>,
+        message: impl Into<String>,
+        response_time_ms: u64,
+    ) -> Self {
         Self {
             component: component.into(),
             status: HealthStatus::Degraded,
@@ -41,7 +49,11 @@ impl HealthCheck {
         }
     }
 
-    pub fn unhealthy(component: impl Into<String>, message: impl Into<String>, response_time_ms: u64) -> Self {
+    pub fn unhealthy(
+        component: impl Into<String>,
+        message: impl Into<String>,
+        response_time_ms: u64,
+    ) -> Self {
         Self {
             component: component.into(),
             status: HealthStatus::Unhealthy,
@@ -63,7 +75,8 @@ pub struct HealthReport {
 impl HealthReport {
     pub fn new(components: Vec<HealthCheck>) -> Self {
         // Overall status is the worst status among all components
-        let overall_status = components.iter()
+        let overall_status = components
+            .iter()
             .map(|c| c.status)
             .max_by_key(|s| match s {
                 HealthStatus::Healthy => 0,
@@ -92,23 +105,43 @@ impl MetricsCollector {
 
     // Counter methods
     pub fn increment_orders_submitted(&self) {
-        tracing::debug!(metric = "orders_submitted_total", value = 1, "Increment counter");
+        tracing::debug!(
+            metric = "orders_submitted_total",
+            value = 1,
+            "Increment counter"
+        );
     }
 
     pub fn increment_orders_filled(&self) {
-        tracing::debug!(metric = "orders_filled_total", value = 1, "Increment counter");
+        tracing::debug!(
+            metric = "orders_filled_total",
+            value = 1,
+            "Increment counter"
+        );
     }
 
     pub fn increment_orders_cancelled(&self) {
-        tracing::debug!(metric = "orders_cancelled_total", value = 1, "Increment counter");
+        tracing::debug!(
+            metric = "orders_cancelled_total",
+            value = 1,
+            "Increment counter"
+        );
     }
 
     pub fn increment_orders_rejected(&self) {
-        tracing::debug!(metric = "orders_rejected_total", value = 1, "Increment counter");
+        tracing::debug!(
+            metric = "orders_rejected_total",
+            value = 1,
+            "Increment counter"
+        );
     }
 
     pub fn increment_trades_executed(&self) {
-        tracing::debug!(metric = "trades_executed_total", value = 1, "Increment counter");
+        tracing::debug!(
+            metric = "trades_executed_total",
+            value = 1,
+            "Increment counter"
+        );
     }
 
     // Gauge methods
@@ -130,15 +163,27 @@ impl MetricsCollector {
 
     // Histogram methods
     pub fn record_order_latency(&self, latency_ms: f64) {
-        tracing::debug!(metric = "order_latency_ms", value = latency_ms, "Record histogram");
+        tracing::debug!(
+            metric = "order_latency_ms",
+            value = latency_ms,
+            "Record histogram"
+        );
     }
 
     pub fn record_api_latency(&self, latency_ms: f64) {
-        tracing::debug!(metric = "api_latency_ms", value = latency_ms, "Record histogram");
+        tracing::debug!(
+            metric = "api_latency_ms",
+            value = latency_ms,
+            "Record histogram"
+        );
     }
 
     pub fn record_strategy_execution_time(&self, duration_ms: f64) {
-        tracing::debug!(metric = "strategy_execution_time_ms", value = duration_ms, "Record histogram");
+        tracing::debug!(
+            metric = "strategy_execution_time_ms",
+            value = duration_ms,
+            "Record histogram"
+        );
     }
 
     /// Helper to measure and record latency
@@ -225,15 +270,15 @@ mod tests {
     #[test]
     fn test_metrics_collector_creation() {
         let collector = MetricsCollector::new();
-        
+
         // Test counter increments
         collector.increment_orders_submitted();
         collector.increment_orders_filled();
-        
+
         // Test gauge updates
         collector.set_active_positions(5);
         collector.set_portfolio_value(100000.0);
-        
+
         // Test histogram recordings
         collector.record_order_latency(25.5);
         collector.record_api_latency(50.0);
@@ -242,12 +287,12 @@ mod tests {
     #[test]
     fn test_measure_latency() {
         let collector = MetricsCollector::new();
-        
+
         let result = collector.measure_latency("order", || {
             std::thread::sleep(std::time::Duration::from_millis(10));
             42
         });
-        
+
         assert_eq!(result, 42);
     }
 }

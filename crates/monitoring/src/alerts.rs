@@ -83,8 +83,12 @@ impl AlertRule {
         match self.condition.operator {
             ComparisonOperator::GreaterThan => metric_value > self.condition.threshold,
             ComparisonOperator::LessThan => metric_value < self.condition.threshold,
-            ComparisonOperator::Equals => (metric_value - self.condition.threshold).abs() < f64::EPSILON,
-            ComparisonOperator::NotEquals => (metric_value - self.condition.threshold).abs() >= f64::EPSILON,
+            ComparisonOperator::Equals => {
+                (metric_value - self.condition.threshold).abs() < f64::EPSILON
+            }
+            ComparisonOperator::NotEquals => {
+                (metric_value - self.condition.threshold).abs() >= f64::EPSILON
+            }
             ComparisonOperator::GreaterThanOrEqual => metric_value >= self.condition.threshold,
             ComparisonOperator::LessThanOrEqual => metric_value <= self.condition.threshold,
         }
@@ -110,11 +114,7 @@ pub struct Alert {
 }
 
 impl Alert {
-    pub fn new(
-        rule: &AlertRule,
-        metric_value: f64,
-        message: impl Into<String>,
-    ) -> Self {
+    pub fn new(rule: &AlertRule, metric_value: f64, message: impl Into<String>) -> Self {
         Self {
             id: Uuid::new_v4(),
             rule_id: rule.id,

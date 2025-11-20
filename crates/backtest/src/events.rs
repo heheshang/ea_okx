@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
-use ea_okx_core::{Symbol};
-use ea_okx_core::models::{OrderSide};
+use ea_okx_core::models::OrderSide;
+use ea_okx_core::Symbol;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -13,7 +13,7 @@ use crate::engine::Candle;
 pub enum MarketEvent {
     /// New candle data arrived
     Candle(Candle),
-    
+
     /// Trade tick occurred
     Trade {
         symbol: Symbol,
@@ -22,7 +22,7 @@ pub enum MarketEvent {
         side: OrderSide,
         timestamp: DateTime<Utc>,
     },
-    
+
     /// Order book snapshot
     OrderBook {
         symbol: Symbol,
@@ -63,20 +63,20 @@ pub enum ExecutionEvent {
         commission: Decimal,
         timestamp: DateTime<Utc>,
     },
-    
+
     /// Order was rejected
     OrderRejected {
         order_id: Uuid,
         reason: String,
         timestamp: DateTime<Utc>,
     },
-    
+
     /// Order was cancelled
     OrderCancelled {
         order_id: Uuid,
         timestamp: DateTime<Utc>,
     },
-    
+
     /// Position was opened
     PositionOpened {
         position_id: Uuid,
@@ -86,7 +86,7 @@ pub enum ExecutionEvent {
         quantity: Decimal,
         timestamp: DateTime<Utc>,
     },
-    
+
     /// Position was closed
     PositionClosed {
         position_id: Uuid,
@@ -122,7 +122,7 @@ pub struct Trade {
     pub pnl: Decimal,
     pub commission: Decimal,
     pub slippage: Decimal,
-    pub max_adverse_excursion: Decimal, // MAE
+    pub max_adverse_excursion: Decimal,   // MAE
     pub max_favorable_excursion: Decimal, // MFE
 }
 
@@ -164,17 +164,17 @@ impl Trade {
     ) {
         self.exit_time = Some(exit_time);
         self.exit_price = Some(exit_price);
-        
+
         // Calculate PnL
         let price_diff = match self.side {
             OrderSide::Buy => exit_price - self.entry_price,
             OrderSide::Sell => self.entry_price - exit_price,
         };
-        
+
         let gross_pnl = price_diff * self.quantity;
         let total_commission = self.commission + exit_commission;
         let total_slippage = self.slippage + exit_slippage;
-        
+
         self.pnl = gross_pnl - total_commission - total_slippage;
     }
 

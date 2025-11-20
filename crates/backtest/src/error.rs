@@ -4,7 +4,6 @@ use thiserror::Error;
 pub enum Error {
     // #[error("Data error: {0}")]
     // DataError(#[from] ea_okx_data::error::Error),
-
     #[error("Strategy error: {0}")]
     StrategyError(#[from] ea_okx_strategy::error::Error),
 

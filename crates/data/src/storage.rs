@@ -75,11 +75,13 @@ impl TimescaleStorage {
     pub async fn new(connection_string: &str) -> Result<Self> {
         let pool = sqlx::PgPool::connect(connection_string)
             .await
-            .map_err(|e| crate::error::Error::Internal(format!("Failed to connect to database: {}", e)))?;
-        
+            .map_err(|e| {
+                crate::error::Error::Internal(format!("Failed to connect to database: {}", e))
+            })?;
+
         Ok(Self { pool })
     }
-    
+
     /// Store candle data
     pub async fn store_candle(&self, candle: &Candle) -> Result<()> {
         sqlx::query(
@@ -113,10 +115,10 @@ impl TimescaleStorage {
         .bind(candle.vwap)
         .execute(&self.pool)
         .await?;
-        
+
         Ok(())
     }
-    
+
     /// Store tick data
     pub async fn store_tick(&self, tick: &Tick) -> Result<()> {
         sqlx::query(
@@ -137,25 +139,29 @@ impl TimescaleStorage {
         .bind(tick.is_block_trade)
         .execute(&self.pool)
         .await?;
-        
+
         Ok(())
     }
-    
+
     /// Store order book snapshot
     pub async fn store_orderbook(&self, snapshot: &OrderBookSnapshot) -> Result<()> {
         // Convert bids and asks to JSONB
         let bids_json = serde_json::to_value(
-            snapshot.bids.iter()
+            snapshot
+                .bids
+                .iter()
                 .map(|(p, q)| vec![p.as_decimal(), q.as_decimal()])
-                .collect::<Vec<_>>()
+                .collect::<Vec<_>>(),
         )?;
-        
+
         let asks_json = serde_json::to_value(
-            snapshot.asks.iter()
+            snapshot
+                .asks
+                .iter()
                 .map(|(p, q)| vec![p.as_decimal(), q.as_decimal()])
-                .collect::<Vec<_>>()
+                .collect::<Vec<_>>(),
         )?;
-        
+
         sqlx::query(
             r#"
             INSERT INTO order_book_snapshots (
@@ -172,10 +178,10 @@ impl TimescaleStorage {
         .bind(&snapshot.depth_level)
         .execute(&self.pool)
         .await?;
-        
+
         Ok(())
     }
-    
+
     /// Query candles within time range
     pub async fn query_candles(
         &self,
@@ -200,24 +206,27 @@ impl TimescaleStorage {
         .bind(end)
         .fetch_all(&self.pool)
         .await?;
-        
-        let candles = rows.into_iter().map(|row| Candle {
-            symbol: Symbol::new(&row.symbol).unwrap(),
-            timestamp: row.timestamp,
-            interval: row.interval,
-            open: Price::new(row.open).unwrap(),
-            high: Price::new(row.high).unwrap(),
-            low: Price::new(row.low).unwrap(),
-            close: Price::new(row.close).unwrap(),
-            volume: Quantity::new(row.volume).unwrap(),
-            quote_volume: row.quote_volume,
-            trade_count: row.trade_count,
-            vwap: row.vwap,
-        }).collect();
-        
+
+        let candles = rows
+            .into_iter()
+            .map(|row| Candle {
+                symbol: Symbol::new(&row.symbol).unwrap(),
+                timestamp: row.timestamp,
+                interval: row.interval,
+                open: Price::new(row.open).unwrap(),
+                high: Price::new(row.high).unwrap(),
+                low: Price::new(row.low).unwrap(),
+                close: Price::new(row.close).unwrap(),
+                volume: Quantity::new(row.volume).unwrap(),
+                quote_volume: row.quote_volume,
+                trade_count: row.trade_count,
+                vwap: row.vwap,
+            })
+            .collect();
+
         Ok(candles)
     }
-    
+
     /// Get latest candle
     pub async fn get_latest_candle(
         &self,
@@ -238,7 +247,7 @@ impl TimescaleStorage {
         .bind(interval)
         .fetch_optional(&self.pool)
         .await?;
-        
+
         Ok(row.map(|row| Candle {
             symbol: Symbol::new(&row.symbol).unwrap(),
             timestamp: row.timestamp,
@@ -266,13 +275,13 @@ impl RedisStorage {
         let client = redis::Client::open(connection_string)?;
         Ok(Self { client })
     }
-    
+
     /// Cache latest candle
     pub async fn cache_latest_candle(&self, candle: &Candle) -> Result<()> {
         let mut con = self.client.get_async_connection().await?;
         let key = format!("candle:{}:{}", candle.symbol.as_str(), candle.interval);
         let value = serde_json::to_string(candle)?;
-        
+
         redis::cmd("SET")
             .arg(&key)
             .arg(&value)
@@ -280,20 +289,21 @@ impl RedisStorage {
             .arg(3600) // 1 hour expiry
             .query_async::<_, ()>(&mut con)
             .await?;
-        
+
         Ok(())
     }
-    
+
     /// Get latest candle from cache
-    pub async fn get_latest_candle(&self, symbol: &Symbol, interval: &str) -> Result<Option<Candle>> {
+    pub async fn get_latest_candle(
+        &self,
+        symbol: &Symbol,
+        interval: &str,
+    ) -> Result<Option<Candle>> {
         let mut con = self.client.get_async_connection().await?;
         let key = format!("candle:{}:{}", symbol.as_str(), interval);
-        
-        let value: Option<String> = redis::cmd("GET")
-            .arg(&key)
-            .query_async(&mut con)
-            .await?;
-        
+
+        let value: Option<String> = redis::cmd("GET").arg(&key).query_async(&mut con).await?;
+
         if let Some(v) = value {
             let candle: Candle = serde_json::from_str(&v)?;
             Ok(Some(candle))
@@ -301,12 +311,12 @@ impl RedisStorage {
             Ok(None)
         }
     }
-    
+
     /// Cache latest price
     pub async fn cache_price(&self, symbol: &Symbol, price: &Price) -> Result<()> {
         let mut con = self.client.get_async_connection().await?;
         let key = format!("price:{}", symbol.as_str());
-        
+
         redis::cmd("SET")
             .arg(&key)
             .arg(price.as_decimal().to_string())
@@ -314,23 +324,21 @@ impl RedisStorage {
             .arg(60) // 1 minute expiry
             .query_async::<_, ()>(&mut con)
             .await?;
-        
+
         Ok(())
     }
-    
+
     /// Get latest price from cache
     pub async fn get_price(&self, symbol: &Symbol) -> Result<Option<Price>> {
         let mut con = self.client.get_async_connection().await?;
         let key = format!("price:{}", symbol.as_str());
-        
-        let value: Option<String> = redis::cmd("GET")
-            .arg(&key)
-            .query_async(&mut con)
-            .await?;
-        
+
+        let value: Option<String> = redis::cmd("GET").arg(&key).query_async(&mut con).await?;
+
         if let Some(v) = value {
-            let decimal = v.parse::<Decimal>()
-                .map_err(|e| crate::error::Error::Internal(format!("Failed to parse price: {}", e)))?;
+            let decimal = v.parse::<Decimal>().map_err(|e| {
+                crate::error::Error::Internal(format!("Failed to parse price: {}", e))
+            })?;
             Ok(Some(Price::new(decimal)?))
         } else {
             Ok(None)
@@ -343,7 +351,7 @@ mod tests {
     use super::*;
     use ea_okx_core::types::Symbol;
     use rust_decimal_macros::dec;
-    
+
     #[test]
     fn test_candle_creation() {
         let symbol = Symbol::new("BTC-USDT").unwrap();
@@ -360,11 +368,11 @@ mod tests {
             trade_count: 150,
             vwap: Some(dec!(50000)),
         };
-        
+
         assert_eq!(candle.symbol, symbol);
         assert_eq!(candle.interval, "1m");
     }
-    
+
     #[test]
     fn test_tick_creation() {
         let symbol = Symbol::new("ETH-USDT").unwrap();
@@ -377,7 +385,7 @@ mod tests {
             side: "buy".to_string(),
             is_block_trade: false,
         };
-        
+
         assert_eq!(tick.symbol, symbol);
         assert_eq!(tick.side, "buy");
     }

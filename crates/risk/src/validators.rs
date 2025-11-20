@@ -1,6 +1,6 @@
 use crate::error::{Error, Result};
-use ea_okx_core::models::{Order, Position, OrderSide};
-use ea_okx_core::{Symbol, Quantity};
+use ea_okx_core::models::{Order, OrderSide, Position};
+use ea_okx_core::{Quantity, Symbol};
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
@@ -12,22 +12,22 @@ use tracing::warn;
 pub struct RiskLimits {
     /// Maximum position size per symbol
     pub max_position_size: HashMap<Symbol, Quantity>,
-    
+
     /// Maximum total portfolio value
     pub max_portfolio_value: Decimal,
-    
+
     /// Maximum leverage allowed
     pub max_leverage: Decimal,
-    
+
     /// Daily loss limit (absolute value)
     pub daily_loss_limit: Decimal,
-    
+
     /// Maximum concentration per symbol (percentage of portfolio)
     pub max_concentration_pct: Decimal,
-    
+
     /// Maximum number of open positions
     pub max_open_positions: usize,
-    
+
     /// Minimum required margin ratio
     pub min_margin_ratio: Decimal,
 }
@@ -131,17 +131,15 @@ impl PreTradeValidator {
     }
 
     /// Check position size limits
-    fn check_position_size(
-        &self,
-        order: &Order,
-        portfolio: &PortfolioState,
-    ) -> Result<()> {
+    fn check_position_size(&self, order: &Order, portfolio: &PortfolioState) -> Result<()> {
         let order_qty = order.quantity.as_decimal();
-        
+
         // Check if we have a limit for this symbol
         if let Some(max_qty) = self.limits.max_position_size.get(&order.symbol) {
             // Calculate current position
-            let current_position = portfolio.positions.iter()
+            let current_position = portfolio
+                .positions
+                .iter()
                 .find(|p| p.symbol == order.symbol)
                 .map(|p| p.quantity.as_decimal())
                 .unwrap_or(Decimal::ZERO);
@@ -154,7 +152,9 @@ impl PreTradeValidator {
             if new_position > max_qty.as_decimal() {
                 return Err(Error::PositionLimitExceeded(format!(
                     "New position {} exceeds limit {} for {}",
-                    new_position, max_qty.as_decimal(), order.symbol.as_str()
+                    new_position,
+                    max_qty.as_decimal(),
+                    order.symbol.as_str()
                 )));
             }
         }
@@ -163,19 +163,20 @@ impl PreTradeValidator {
     }
 
     /// Check leverage limits
-    fn check_leverage(
-        &self,
-        order: &Order,
-        portfolio: &PortfolioState,
-    ) -> Result<()> {
+    fn check_leverage(&self, order: &Order, portfolio: &PortfolioState) -> Result<()> {
         // Use market price if order price is None (for market orders)
-        let price = order.price.as_ref()
+        let price = order
+            .price
+            .as_ref()
             .map(|p| p.as_decimal())
             .unwrap_or(dec!(0.0)); // For market orders, we'd need current price
         let order_value = price * order.quantity.as_decimal();
-        let total_exposure = portfolio.positions.iter()
+        let total_exposure = portfolio
+            .positions
+            .iter()
             .map(|p| p.quantity.as_decimal() * p.current_price.as_decimal())
-            .sum::<Decimal>() + order_value;
+            .sum::<Decimal>()
+            + order_value;
 
         let leverage = if portfolio.total_equity > Decimal::ZERO {
             total_exposure / portfolio.total_equity
@@ -198,20 +199,19 @@ impl PreTradeValidator {
         if portfolio.daily_pnl < -self.limits.daily_loss_limit {
             return Err(Error::DailyLossLimitExceeded(format!(
                 "Daily loss {:.2} exceeds limit {:.2}",
-                portfolio.daily_pnl.abs(), self.limits.daily_loss_limit
+                portfolio.daily_pnl.abs(),
+                self.limits.daily_loss_limit
             )));
         }
         Ok(())
     }
 
     /// Check concentration limits
-    fn check_concentration(
-        &self,
-        order: &Order,
-        portfolio: &PortfolioState,
-    ) -> Result<()> {
+    fn check_concentration(&self, order: &Order, portfolio: &PortfolioState) -> Result<()> {
         // Use market price if order price is None (for market orders)
-        let price = order.price.as_ref()
+        let price = order
+            .price
+            .as_ref()
             .map(|p| p.as_decimal())
             .unwrap_or(dec!(0.0)); // For market orders, we'd need current price
         let order_value = price * order.quantity.as_decimal();
@@ -233,13 +233,11 @@ impl PreTradeValidator {
     }
 
     /// Check margin requirements
-    fn check_margin(
-        &self,
-        order: &Order,
-        portfolio: &PortfolioState,
-    ) -> Result<()> {
+    fn check_margin(&self, order: &Order, portfolio: &PortfolioState) -> Result<()> {
         // Use market price if order price is None (for market orders)
-        let price = order.price.as_ref()
+        let price = order
+            .price
+            .as_ref()
             .map(|p| p.as_decimal())
             .unwrap_or(dec!(0.0)); // For market orders, we'd need current price
         let order_value = price * order.quantity.as_decimal();
@@ -256,14 +254,9 @@ impl PreTradeValidator {
     }
 
     /// Check maximum positions limit
-    fn check_max_positions(
-        &self,
-        order: &Order,
-        portfolio: &PortfolioState,
-    ) -> Result<()> {
+    fn check_max_positions(&self, order: &Order, portfolio: &PortfolioState) -> Result<()> {
         // Check if this would open a new position
-        let has_existing = portfolio.positions.iter()
-            .any(|p| p.symbol == order.symbol);
+        let has_existing = portfolio.positions.iter().any(|p| p.symbol == order.symbol);
 
         if !has_existing && portfolio.positions.len() >= self.limits.max_open_positions {
             warn!(
@@ -293,12 +286,14 @@ impl ValidationResult {
     }
 
     pub fn has_critical_violations(&self) -> bool {
-        self.violations.iter()
+        self.violations
+            .iter()
             .any(|v| v.severity == ViolationSeverity::Critical)
     }
 
     pub fn has_warnings(&self) -> bool {
-        self.violations.iter()
+        self.violations
+            .iter()
             .any(|v| v.severity == ViolationSeverity::Warning)
     }
 }
@@ -351,7 +346,7 @@ mod tests {
             max_leverage: dec!(3.0),
             ..Default::default()
         };
-        
+
         let validator = PreTradeValidator::new(limits);
         let order = create_test_order(dec!(1.0), dec!(50000.0));
         let portfolio = create_test_portfolio();
@@ -369,7 +364,7 @@ mod tests {
 
         let validator = PreTradeValidator::new(limits);
         let order = create_test_order(dec!(0.1), dec!(50000.0));
-        
+
         let mut portfolio = create_test_portfolio();
         portfolio.daily_pnl = dec!(-6000.0);
 
@@ -387,7 +382,7 @@ mod tests {
 
         let validator = PreTradeValidator::new(limits);
         let order = create_test_order(dec!(10.0), dec!(50000.0)); // $500k order
-        
+
         let mut portfolio = create_test_portfolio();
         portfolio.available_margin = dec!(10000.0); // Only $10k available
 

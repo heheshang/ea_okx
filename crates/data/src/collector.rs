@@ -7,7 +7,9 @@ use crate::error::{Error, Result};
 use crate::quality::{QualityConfig, QualityControl};
 use crate::storage::{Candle, RedisStorage, Tick, TimescaleStorage};
 use chrono::Utc;
-use ea_okx_client::models::{CandleData, Channel, SubscriptionRequest, TickerData, TradeData, WebSocketEvent};
+use ea_okx_client::models::{
+    CandleData, Channel, SubscriptionRequest, TickerData, TradeData, WebSocketEvent,
+};
 use ea_okx_client::websocket::OkxWebSocketClient;
 use ea_okx_client::Credentials;
 use ea_okx_core::types::{Price, Quantity, Symbol};
@@ -20,16 +22,16 @@ use tracing::{error, info, warn};
 pub struct CollectorConfig {
     /// Symbols to collect data for
     pub symbols: Vec<String>,
-    
+
     /// Channels to subscribe to
     pub channels: Vec<Channel>,
-    
+
     /// Quality control configuration
     pub quality_config: QualityConfig,
-    
+
     /// Enable TimescaleDB storage
     pub enable_timescale: bool,
-    
+
     /// Enable Redis caching
     pub enable_redis: bool,
 }
@@ -60,7 +62,7 @@ impl MarketDataCollector {
     /// Create a new market data collector
     pub fn new(config: CollectorConfig) -> Self {
         let quality_control = Arc::new(QualityControl::new(config.quality_config.clone()));
-        
+
         Self {
             config,
             ws_client: None,
@@ -70,7 +72,7 @@ impl MarketDataCollector {
             shutdown_tx: None,
         }
     }
-    
+
     /// Initialize connections
     pub async fn initialize(
         &mut self,
@@ -81,8 +83,11 @@ impl MarketDataCollector {
     ) -> Result<()> {
         // Initialize WebSocket client
         let mut ws_client = OkxWebSocketClient::new(credentials, is_testnet);
-        ws_client.connect().await.map_err(|e| Error::WebSocketError(e))?;
-        
+        ws_client
+            .connect()
+            .await
+            .map_err(|e| Error::WebSocketError(e))?;
+
         // Subscribe to channels
         let mut subscriptions = Vec::new();
         for symbol in &self.config.symbols {
@@ -90,10 +95,13 @@ impl MarketDataCollector {
                 subscriptions.push(SubscriptionRequest::new(channel.clone(), symbol));
             }
         }
-        
-        ws_client.subscribe(subscriptions).await.map_err(|e| Error::WebSocketError(e))?;
+
+        ws_client
+            .subscribe(subscriptions)
+            .await
+            .map_err(|e| Error::WebSocketError(e))?;
         self.ws_client = Some(ws_client);
-        
+
         // Initialize storage backends
         if self.config.enable_timescale {
             if let Some(url) = timescale_url {
@@ -101,28 +109,33 @@ impl MarketDataCollector {
                 info!("TimescaleDB storage initialized");
             }
         }
-        
+
         if self.config.enable_redis {
             if let Some(url) = redis_url {
                 self.redis = Some(RedisStorage::new(url)?);
                 info!("Redis cache initialized");
             }
         }
-        
-        info!("Market data collector initialized for {} symbols", self.config.symbols.len());
+
+        info!(
+            "Market data collector initialized for {} symbols",
+            self.config.symbols.len()
+        );
         Ok(())
     }
-    
+
     /// Start collecting data
     pub async fn start(&mut self) -> Result<()> {
-        let ws_client = self.ws_client.as_ref()
+        let ws_client = self
+            .ws_client
+            .as_ref()
             .ok_or_else(|| Error::ConfigError("WebSocket client not initialized".to_string()))?;
-        
+
         let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);
         self.shutdown_tx = Some(shutdown_tx);
-        
+
         info!("Starting market data collection...");
-        
+
         loop {
             tokio::select! {
                 // Check for shutdown signal
@@ -130,7 +143,7 @@ impl MarketDataCollector {
                     info!("Shutdown signal received, stopping collector");
                     break;
                 }
-                
+
                 // Process WebSocket messages
                 event = ws_client.next_message() => {
                     match event {
@@ -151,11 +164,11 @@ impl MarketDataCollector {
                 }
             }
         }
-        
+
         info!("Market data collector stopped");
         Ok(())
     }
-    
+
     /// Process WebSocket event
     async fn process_event(&self, event: WebSocketEvent) -> Result<()> {
         match event {
@@ -178,46 +191,59 @@ impl MarketDataCollector {
                 // Ignore other events
             }
         }
-        
+
         Ok(())
     }
-    
+
     /// Process ticker data
     async fn process_ticker(&self, ticker: TickerData) -> Result<()> {
         let symbol = Symbol::new(&ticker.inst_id)?;
-        let price = Price::new(ticker.last.parse().map_err(|e| Error::ParseError(format!("{}", e)))?)?;
+        let price = Price::new(
+            ticker
+                .last
+                .parse()
+                .map_err(|e| Error::ParseError(format!("{}", e)))?,
+        )?;
         let timestamp = Utc::now(); // Use current time since ticker doesn't have exact timestamp
-        
+
         // Quality control
-        if let Err(e) = self.quality_control.validate_market_data(&symbol, &price, timestamp, None) {
+        if let Err(e) = self
+            .quality_control
+            .validate_market_data(&symbol, &price, timestamp, None)
+        {
             warn!("Ticker quality check failed: {}", e);
             return Ok(()); // Don't propagate QC errors
         }
-        
+
         info!("Ticker {} - Last: {}", ticker.inst_id, ticker.last);
         Ok(())
     }
-    
+
     /// Process candle data
     async fn process_candle(&self, candle_data: CandleData) -> Result<()> {
-        let parsed = candle_data.parse().map_err(|e| Error::ParseError(format!("{}", e)))?;
-        
+        let parsed = candle_data
+            .parse()
+            .map_err(|e| Error::ParseError(format!("{}", e)))?;
+
         // Skip unconfirmed candles
         if !parsed.is_confirmed {
             return Ok(());
         }
-        
+
         let price = Price::new(parsed.close)?;
         let symbol = Symbol::new("UNKNOWN")?; // Need to track symbol from subscription
         let timestamp = chrono::DateTime::from_timestamp_millis(parsed.timestamp)
             .ok_or_else(|| Error::ParseError("Invalid timestamp".to_string()))?;
-        
+
         // Quality control
-        if let Err(e) = self.quality_control.validate_market_data(&symbol, &price, timestamp, None) {
+        if let Err(e) = self
+            .quality_control
+            .validate_market_data(&symbol, &price, timestamp, None)
+        {
             warn!("Candle quality check failed: {}", e);
             return Ok(());
         }
-        
+
         // Store candle
         if let Some(ts) = &self.timescale {
             let candle = Candle {
@@ -235,25 +261,42 @@ impl MarketDataCollector {
             };
             ts.store_candle(&candle).await?;
         }
-        
-        info!("Candle - O: {}, H: {}, L: {}, C: {}", parsed.open, parsed.high, parsed.low, parsed.close);
+
+        info!(
+            "Candle - O: {}, H: {}, L: {}, C: {}",
+            parsed.open, parsed.high, parsed.low, parsed.close
+        );
         Ok(())
     }
-    
+
     /// Process trade data
     async fn process_trade(&self, trade: TradeData) -> Result<()> {
         let symbol = Symbol::new(&trade.inst_id)?;
-        let price = Price::new(trade.px.parse().map_err(|e| Error::ParseError(format!("{}", e)))?)?;
+        let price = Price::new(
+            trade
+                .px
+                .parse()
+                .map_err(|e| Error::ParseError(format!("{}", e)))?,
+        )?;
         let timestamp = chrono::DateTime::from_timestamp_millis(
-            trade.ts.parse().map_err(|e| Error::ParseError(format!("{}", e)))?
-        ).ok_or_else(|| Error::ParseError("Invalid timestamp".to_string()))?;
-        
+            trade
+                .ts
+                .parse()
+                .map_err(|e| Error::ParseError(format!("{}", e)))?,
+        )
+        .ok_or_else(|| Error::ParseError("Invalid timestamp".to_string()))?;
+
         // Quality control
-        if let Err(e) = self.quality_control.validate_market_data(&symbol, &price, timestamp, Some(&trade.trade_id)) {
+        if let Err(e) = self.quality_control.validate_market_data(
+            &symbol,
+            &price,
+            timestamp,
+            Some(&trade.trade_id),
+        ) {
             warn!("Trade quality check failed: {}", e);
             return Ok(());
         }
-        
+
         // Store tick
         if let Some(ts) = &self.timescale {
             let tick = Tick {
@@ -261,29 +304,36 @@ impl MarketDataCollector {
                 timestamp,
                 trade_id: trade.trade_id,
                 price,
-                quantity: Quantity::new(trade.sz.parse().map_err(|e| Error::ParseError(format!("{}", e)))?)?,
+                quantity: Quantity::new(
+                    trade
+                        .sz
+                        .parse()
+                        .map_err(|e| Error::ParseError(format!("{}", e)))?,
+                )?,
                 side: trade.side,
                 is_block_trade: false,
             };
             ts.store_tick(&tick).await?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Stop the collector
     pub async fn stop(&mut self) -> Result<()> {
         if let Some(tx) = self.shutdown_tx.take() {
             let _ = tx.send(()).await;
         }
-        
+
         if let Some(ws) = self.ws_client.as_ref() {
-            ws.disconnect().await.map_err(|e| Error::WebSocketError(e))?;
+            ws.disconnect()
+                .await
+                .map_err(|e| Error::WebSocketError(e))?;
         }
-        
+
         Ok(())
     }
-    
+
     /// Get quality control statistics
     pub fn get_stats(&self) -> crate::quality::QualityStats {
         self.quality_control.get_stats()
@@ -293,14 +343,14 @@ impl MarketDataCollector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_collector_config_default() {
         let config = CollectorConfig::default();
         assert_eq!(config.symbols.len(), 1);
         assert!(config.symbols.contains(&"BTC-USDT".to_string()));
     }
-    
+
     #[test]
     fn test_collector_creation() {
         let config = CollectorConfig::default();

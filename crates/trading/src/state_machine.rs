@@ -1,6 +1,6 @@
 use crate::error::{Error, Result};
 use chrono::{DateTime, Utc};
-use ea_okx_core::models::{Order, OrderStatus};
+use ea_okx_core::models::OrderStatus;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;

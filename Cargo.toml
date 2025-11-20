@@ -2,10 +2,14 @@
 members = [
     "crates/core",
     "crates/okx-client",
-    "crates/data", "crates/strategy", "crates/backtest", "crates/trading", "crates/risk",  "crates/monitoring",
+    "crates/data",
+    "crates/strategy",
+    "crates/backtest",
+    "crates/trading",
+    "crates/risk",
+    "crates/monitoring",
 ]
 resolver = "2"
-default-members = []
 
 [workspace.package]
 version = "0.1.0"
@@ -25,7 +29,14 @@ tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace"] }
 
 # Database
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "rust_decimal"] }
+sqlx = { version = "0.7", features = [
+    "runtime-tokio-rustls",
+    "postgres",
+    "uuid",
+    "chrono",
+    "json",
+    "rust_decimal",
+] }
 redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }
 
 # Serialization

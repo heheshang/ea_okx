@@ -30,3 +30,4 @@ anyhow = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 rust_decimal = { version = "1.33", features = ["serde"] }
 uuid = { version = "1.6", features = ["v4"] }
+data = { package = "ea-okx-data", path = "../crates/data" }

@@ -2,8 +2,8 @@ use crate::error::{Error, Result};
 use crate::state_machine::{OrderState, OrderStateMachine};
 use chrono::{DateTime, Duration, Utc};
 use ea_okx_client::OkxRestClient;
-use ea_okx_core::models::{Order, OrderStatus};
-use ea_okx_core::{Symbol, Price, Quantity};
+use ea_okx_core::models::Order;
+use ea_okx_core::{Price, Quantity};
 use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -93,7 +93,7 @@ impl OrderManager {
     }
 
     /// Submit a new order
-    pub async fn submit_order(&self, mut order: Order) -> Result<Uuid> {
+    pub async fn submit_order(&self, order: Order) -> Result<Uuid> {
         let order_id = order.id;
         
         let price_str = order.price.map(|p| p.as_decimal().to_string()).unwrap_or_else(|| "market".to_string());

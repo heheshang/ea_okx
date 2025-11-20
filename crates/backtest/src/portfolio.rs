@@ -213,6 +213,7 @@ mod tests {
         let order = Order::new(
             uuid::Uuid::new_v4(),
             symbol.clone(),
+            OrderSide::Buy,
             ea_okx_core::OrderType::Market,
             OrderSide::Buy,
             ea_okx_core::Price::new(dec!(50000.0)).unwrap(),
@@ -227,7 +228,6 @@ mod tests {
             timestamp: chrono::Utc::now(),
             slippage: dec!(2.5),
         };
-        
         portfolio.apply_fill(&order, &fill).unwrap();
         
         // Check cash: 10000 - (50000 * 0.1) - 5 - 2.5 = 4992.5

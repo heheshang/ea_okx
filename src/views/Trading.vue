@@ -1,52 +1,57 @@
 <template>
   <div class="trading-monitor">
     <!-- Real-time Market Data -->
-    <el-row :gutter="20">
-      <el-col :span="24">
-        <el-card shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>Real-time Market Data</span>
-              <el-space>
-                <el-select v-model="selectedSymbol" placeholder="Select Symbol" size="small" style="width: 150px">
-                  <el-option
-                    v-for="symbol in symbols"
-                    :key="symbol"
-                    :label="symbol"
-                    :value="symbol"
-                  />
-                </el-select>
-                <el-button :icon="Refresh" size="small" @click="refreshData">Refresh</el-button>
-              </el-space>
-            </div>
-          </template>
-          <el-row :gutter="15">
-            <el-col :span="6" v-for="price in marketPrices" :key="price.symbol">
-              <div class="price-card">
-                <div class="symbol">{{ price.symbol }}</div>
-                <div class="price" :class="price.change >= 0 ? 'text-success' : 'text-danger'">
-                  ${{ price.price.toLocaleString() }}
-                </div>
-                <div class="change" :class="price.change >= 0 ? 'text-success' : 'text-danger'">
-                  {{ price.change >= 0 ? '+' : '' }}{{ price.change.toFixed(2) }}%
-                </div>
-              </div>
-            </el-col>
-          </el-row>
-        </el-card>
-      </el-col>
-    </el-row>
+    <el-card shadow="hover" class="market-card">
+      <template #header>
+        <div class="card-header">
+          <span>Real-time Market Data</span>
+          <el-space :size="10" wrap>
+            <el-select v-model="selectedSymbol" placeholder="Select Symbol" size="small" style="width: 150px" v-if="!isMobile">
+              <el-option
+                v-for="symbol in symbols"
+                :key="symbol"
+                :label="symbol"
+                :value="symbol"
+              />
+            </el-select>
+            <el-button :icon="Refresh" size="small" @click="refreshData" class="refresh-btn">
+              <span class="btn-text">Refresh</span>
+            </el-button>
+          </el-space>
+        </div>
+      </template>
+      <div class="price-grid">
+        <div 
+          v-for="price in marketPrices" 
+          :key="price.symbol"
+          class="price-card"
+          :class="{ 'price-up': price.change >= 0, 'price-down': price.change < 0 }"
+        >
+          <div class="symbol">{{ price.symbol }}</div>
+          <div class="price" :class="price.change >= 0 ? 'text-success' : 'text-danger'">
+            ${{ price.price.toLocaleString() }}
+          </div>
+          <div class="change" :class="price.change >= 0 ? 'text-success' : 'text-danger'">
+            <el-icon :size="12">
+              <CaretTop v-if="price.change >= 0" />
+              <CaretBottom v-else />
+            </el-icon>
+            {{ price.change >= 0 ? '+' : '' }}{{ price.change.toFixed(2) }}%
+          </div>
+        </div>
+      </div>
+    </el-card>
 
     <!-- Active Orders & Positions -->
     <el-row :gutter="20" class="mt-20">
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
               <span>Active Orders</span>
-              <el-button size="small" type="primary" @click="showPlaceOrderDialog = true">
+              <el-button size="small" type="primary" @click="showPlaceOrderDialog = true" class="place-order-btn">
                 <el-icon><Plus /></el-icon>
-                Place Order
+                <span class="btn-text">Place Order</span>
               </el-button>
             </div>
           </template>
@@ -95,13 +100,13 @@
         </el-card>
       </el-col>
 
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" class="mt-mobile">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
               <span>Current Positions</span>
-              <el-button size="small" type="danger" @click="closeAllPositions">
-                Close All
+              <el-button size="small" type="danger" @click="closeAllPositions" class="close-all-btn">
+                <span class="btn-text">Close All</span>
               </el-button>
             </div>
           </template>
@@ -151,7 +156,7 @@
           <template #header>
             <div class="card-header">
               <span>Trade History</span>
-              <el-space>
+              <el-space :size="10" wrap>
                 <el-date-picker
                   v-model="dateRange"
                   type="daterange"
@@ -204,7 +209,7 @@
     </el-row>
 
     <!-- Place Order Dialog -->
-    <el-dialog v-model="showPlaceOrderDialog" title="Place Order" width="500px">
+    <el-dialog v-model="showPlaceOrderDialog" title="Place Order" :width="handleDialogWidth">
       <el-form :model="orderForm" label-width="120px">
         <el-form-item label="Symbol">
           <el-select v-model="orderForm.symbol" placeholder="Select symbol">
@@ -237,24 +242,33 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showPlaceOrderDialog = false">Cancel</el-button>
-        <el-button type="primary" @click="placeOrder">Place Order</el-button>
+        <div class="dialog-footer">
+          <el-button @click="showPlaceOrderDialog = false" class="cancel-btn">
+            <span>Cancel</span>
+          </el-button>
+          <el-button type="primary" @click="placeOrder" class="submit-btn">
+            <span>Place Order</span>
+          </el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Plus, Download } from '@element-plus/icons-vue'
+import { Refresh, Plus, Download, CaretTop, CaretBottom } from '@element-plus/icons-vue'
+import { useResponsive } from '@/composables/useResponsive'
 
 // Define component name for keep-alive
 defineOptions({
   name: 'Trading'
 })
+
+const { isMobile } = useResponsive()
 
 interface MarketPrice {
   symbol: string
@@ -432,6 +446,9 @@ const closeAllPositions = async () => {
   }
 }
 
+// Check if mobile on resize
+const handleDialogWidth = computed(() => isMobile.value ? '90%' : '500px')
+
 onMounted(async () => {
   // Listen to real-time market data updates
   unlistenMarketData = await listen('market-data-update', (event: any) => {
@@ -469,37 +486,128 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables.scss';
+@import '@/styles/utilities.scss';
+
 .trading-monitor {
   .mt-20 {
-    margin-top: 20px;
+    margin-top: $spacing-xl;
+  }
+  
+  .mt-mobile {
+    @include mobile {
+      margin-top: $spacing-xl;
+    }
+  }
+  
+  .market-card {
+    margin-bottom: $spacing-xl;
   }
 
   .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: $spacing-md;
+    flex-wrap: wrap;
+    
+    span {
+      font-weight: $font-weight-medium;
+      
+      @include mobile {
+        font-size: $font-size-sm;
+      }
+    }
+    
+    .refresh-btn,
+    .place-order-btn,
+    .close-all-btn {
+      min-height: 32px;
+      
+      @include mobile {
+        min-height: 36px;
+        
+        .btn-text {
+          @media (max-width: 480px) {
+            display: none;
+          }
+        }
+      }
+    }
+    
+    .btn-text {
+      @media (max-width: 480px) {
+        display: none;
+      }
+    }
+  }
+  
+  .price-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: $spacing-lg;
+    
+    @include mobile {
+      grid-template-columns: repeat(2, 1fr);
+      gap: $spacing-md;
+    }
   }
 
   .price-card {
-    padding: 15px;
+    padding: $spacing-lg;
     background-color: var(--bg-tertiary);
-    border-radius: 8px;
+    border-radius: $radius-md;
     text-align: center;
+    border: 2px solid transparent;
+    transition: all $transition-base;
+    
+    @include mobile {
+      padding: $spacing-md;
+    }
+    
+    &.price-up {
+      border-color: var(--success-color);
+      background-color: var(--success-bg);
+    }
+    
+    &.price-down {
+      border-color: var(--danger-color);
+      background-color: var(--danger-bg);
+    }
 
     .symbol {
-      font-size: 14px;
+      font-size: $font-size-sm;
       color: var(--text-secondary);
-      margin-bottom: 8px;
+      margin-bottom: $spacing-sm;
+      font-weight: $font-weight-semibold;
+      
+      @include mobile {
+        font-size: $font-size-xs;
+        margin-bottom: $spacing-xs;
+      }
     }
 
     .price {
-      font-size: 24px;
-      font-weight: bold;
-      margin-bottom: 5px;
+      font-size: $font-size-2xl;
+      font-weight: $font-weight-bold;
+      margin-bottom: $spacing-xs;
+      
+      @include mobile {
+        font-size: $font-size-lg;
+      }
     }
 
     .change {
-      font-size: 14px;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-medium;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: $spacing-xs;
+      
+      @include mobile {
+        font-size: $font-size-xs;
+      }
     }
   }
 
@@ -524,6 +632,10 @@ onUnmounted(() => {
   :deep(.el-table) {
     background-color: var(--bg-secondary);
     color: var(--text-primary);
+    
+    @media (max-width: 768px) {
+      font-size: 12px;
+    }
 
     th {
       background-color: var(--bg-tertiary);
@@ -535,6 +647,47 @@ onUnmounted(() => {
 
       &:hover > td {
         background-color: var(--bg-tertiary);
+      }
+    }
+  }
+  
+  :deep(.el-dialog) {
+    @media (max-width: 768px) {
+      margin: 0 auto;
+    }
+  }
+  
+  :deep(.el-form) {
+    @media (max-width: 768px) {
+      .el-form-item__label {
+        font-size: 14px;
+      }
+    }
+  }
+  
+  :deep(.el-select),
+  :deep(.el-input-number),
+  :deep(.el-date-picker) {
+    width: 100%;
+  }
+  
+  .dialog-footer {
+    display: flex;
+    gap: $spacing-md;
+    
+    @include mobile {
+      flex-direction: column-reverse;
+      gap: $spacing-sm;
+    }
+    
+    .cancel-btn,
+    .submit-btn {
+      flex: 1;
+      min-height: $touch-target-min;
+      
+      @include mobile {
+        width: 100%;
+        min-height: $touch-target-comfortable;
       }
     }
   }

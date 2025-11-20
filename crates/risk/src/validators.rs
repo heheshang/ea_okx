@@ -327,7 +327,7 @@ mod tests {
             OrderSide::Buy,
             ea_okx_core::models::OrderType::Iceberg,
             Quantity::new(qty).unwrap(),
-            ea_okx_core::Price::new(price).unwrap(),
+            Some(ea_okx_core::Price::new(price).unwrap()),
         )
     }
 

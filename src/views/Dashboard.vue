@@ -1,44 +1,56 @@
 <template>
   <div class="dashboard">
-    <el-row :gutter="20">
-      <!-- System Metrics Cards -->
-      <el-col :span="6" v-for="metric in metrics" :key="metric.title">
-        <el-card class="metric-card" shadow="hover">
-          <div class="metric-content">
-            <div class="metric-icon" :style="{ backgroundColor: metric.color }">
-              <el-icon :size="24"><component :is="metric.icon" /></el-icon>
-            </div>
-            <div class="metric-info">
-              <div class="metric-title">{{ metric.title }}</div>
-              <div class="metric-value">{{ metric.value }}</div>
-              <div class="metric-change" :class="metric.trend">
-                {{ metric.change }}
-              </div>
+    <!-- System Metrics Cards -->
+    <div class="metrics-grid">
+      <div 
+        v-for="metric in metrics" 
+        :key="metric.title"
+        class="metric-card"
+        :class="'animate-slide-in-up'"
+      >
+        <div class="metric-content">
+          <div class="metric-icon" :style="{ backgroundColor: metric.color }">
+            <el-icon :size="isMobile ? 20 : 24"><component :is="metric.icon" /></el-icon>
+          </div>
+          <div class="metric-info">
+            <div class="metric-title">{{ metric.title }}</div>
+            <div class="metric-value">{{ metric.value }}</div>
+            <div class="metric-change" :class="metric.trend">
+              <el-icon :size="12">
+                <CaretTop v-if="metric.trend === 'up'" />
+                <CaretBottom v-else />
+              </el-icon>
+              {{ metric.change }}
             </div>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </div>
+      </div>
+    </div>
 
     <!-- Charts Row -->
     <el-row :gutter="20" class="mt-20">
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
               <span>Strategy Performance</span>
-              <el-button size="small" type="primary" text>View All</el-button>
+              <el-button size="small" type="primary" text class="view-all-btn">
+                <span class="btn-text">View All</span>
+              </el-button>
             </div>
           </template>
           <div class="chart-container" ref="equityChartRef"></div>
         </el-card>
       </el-col>
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" class="mt-mobile">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
               <span>Real-time Market Data</span>
-              <el-button size="small" type="primary" text>Refresh</el-button>
+              <el-button size="small" type="primary" text class="refresh-btn" @click="loadSystemMetrics">
+                <el-icon><Refresh /></el-icon>
+                <span class="btn-text">Refresh</span>
+              </el-button>
             </div>
           </template>
           <div class="chart-container" ref="marketChartRef"></div>
@@ -48,12 +60,15 @@
 
     <!-- Active Strategies & Recent Alerts -->
     <el-row :gutter="20" class="mt-20">
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
               <span>Active Strategies</span>
-              <el-button size="small" type="primary" text>Manage</el-button>
+              <el-button size="small" type="primary" text class="manage-btn">
+                <el-icon><Setting /></el-icon>
+                <span class="btn-text">Manage</span>
+              </el-button>
             </div>
           </template>
           <el-table :data="activeStrategies" style="width: 100%" height="300">
@@ -78,12 +93,14 @@
           </el-table>
         </el-card>
       </el-col>
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" class="mt-mobile">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
               <span>Recent Alerts</span>
-              <el-button size="small" type="primary" text>View All</el-button>
+              <el-button size="small" type="primary" text class="view-all-btn">
+                <span class="btn-text">View All</span>
+              </el-button>
             </div>
           </template>
           <el-timeline class="alert-timeline">
@@ -107,6 +124,8 @@ import { ref, onMounted, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import * as echarts from 'echarts'
 import { useConfigStore } from '@/stores/config'
+import { useResponsive } from '@/composables/useResponsive'
+import { CaretTop, CaretBottom, Refresh, Setting } from '@element-plus/icons-vue'
 
 // Define component name for keep-alive
 defineOptions({
@@ -115,6 +134,7 @@ defineOptions({
 
 const configStore = useConfigStore()
 const isDark = computed(() => configStore.theme === 'dark')
+const { isMobile } = useResponsive()
 
 let equityChart: echarts.ECharts | null = null
 let marketChart: echarts.ECharts | null = null
@@ -255,52 +275,118 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables.scss';
+@import '@/styles/utilities.scss';
+
 .dashboard {
   .mt-20 {
-    margin-top: 20px;
+    margin-top: $spacing-xl;
+  }
+  
+  .mt-mobile {
+    @include mobile {
+      margin-top: $spacing-xl;
+    }
+  }
+  
+  // Metrics Grid
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: $spacing-xl;
+    margin-bottom: $spacing-2xl;
+    
+    @include mobile {
+      grid-template-columns: repeat(2, 1fr);
+      gap: $spacing-md;
+      margin-bottom: $spacing-lg;
+    }
   }
 
   .metric-card {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
-
-    :deep(.el-card__body) {
-      padding: 20px;
+    border-radius: $radius-lg;
+    padding: $spacing-xl;
+    transition: all $transition-base;
+    cursor: default;
+    
+    @include mobile {
+      padding: $spacing-lg;
+      border-radius: $radius-md;
+    }
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px var(--shadow-color);
+      border-color: var(--accent-color);
     }
 
     .metric-content {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: $spacing-lg;
+      
+      @include mobile {
+        gap: $spacing-md;
+        flex-direction: column;
+        align-items: flex-start;
+      }
 
       .metric-icon {
         width: 50px;
         height: 50px;
-        border-radius: 12px;
+        border-radius: $radius-lg;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
+        flex-shrink: 0;
+        
+        @include mobile {
+          width: 40px;
+          height: 40px;
+          border-radius: $radius-md;
+        }
       }
 
       .metric-info {
         flex: 1;
+        min-width: 0;
 
         .metric-title {
-          font-size: 14px;
+          font-size: $font-size-sm;
           color: var(--text-secondary);
-          margin-bottom: 5px;
+          margin-bottom: $spacing-xs;
+          font-weight: $font-weight-medium;
+          
+          @include mobile {
+            font-size: $font-size-xs;
+          }
         }
 
         .metric-value {
-          font-size: 24px;
-          font-weight: bold;
+          font-size: $font-size-2xl;
+          font-weight: $font-weight-bold;
           color: var(--text-primary);
-          margin-bottom: 5px;
+          margin-bottom: $spacing-xs;
+          line-height: $line-height-tight;
+          
+          @include mobile {
+            font-size: $font-size-lg;
+          }
         }
 
         .metric-change {
-          font-size: 12px;
+          font-size: $font-size-xs;
+          font-weight: $font-weight-medium;
+          display: flex;
+          align-items: center;
+          gap: $spacing-xs;
+          
+          @include mobile {
+            font-size: 10px;
+          }
           
           &.up {
             color: var(--success-color);
@@ -318,10 +404,38 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    
+    span {
+      font-weight: $font-weight-medium;
+      
+      @include mobile {
+        font-size: $font-size-sm;
+      }
+    }
+    
+    .view-all-btn,
+    .refresh-btn,
+    .manage-btn {
+      min-height: 32px;
+      
+      @include mobile {
+        min-height: 36px;
+        
+        .btn-text {
+          @media (max-width: 480px) {
+            display: none;
+          }
+        }
+      }
+    }
   }
 
   .chart-container {
     height: 300px;
+    
+    @media (max-width: 768px) {
+      height: 250px;
+    }
   }
 
   .text-success {
@@ -336,6 +450,10 @@ onMounted(() => {
     padding: 10px 0;
     max-height: 260px;
     overflow-y: auto;
+    
+    @media (max-width: 768px) {
+      max-height: 220px;
+    }
   }
 
   :deep(.el-card) {
@@ -347,6 +465,10 @@ onMounted(() => {
   :deep(.el-table) {
     background-color: var(--bg-secondary);
     color: var(--text-primary);
+    
+    @media (max-width: 768px) {
+      font-size: 12px;
+    }
 
     th {
       background-color: var(--bg-tertiary);

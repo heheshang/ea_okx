@@ -1,6 +1,11 @@
 <template>
   <el-container class="main-layout">
-    <el-aside width="200px" class="sidebar">
+    <!-- Sidebar with responsive behavior -->
+    <el-aside 
+      :width="sidebarWidth" 
+      class="sidebar"
+      v-show="!isMobile"
+    >
       <div class="logo">
         <h2>EA OKX</h2>
       </div>
@@ -38,6 +43,7 @@
         </el-menu-item>
       </el-menu>
     </el-aside>
+
     <el-container>
       <el-header class="header">
         <div class="header-left">
@@ -50,11 +56,11 @@
               <Moon v-else />
             </el-icon>
           </el-tooltip>
-          <el-icon class="header-icon"><Bell /></el-icon>
-          <el-icon class="header-icon"><User /></el-icon>
+          <el-icon class="header-icon" v-if="!isMobile"><Bell /></el-icon>
+          <el-icon class="header-icon" v-if="!isMobile"><User /></el-icon>
         </div>
       </el-header>
-      <el-main class="main-content">
+      <el-main class="main-content" :class="{ 'mobile-content': isMobile }">
         <router-view v-slot="{ Component, route }">
           <transition name="fade-slide" mode="out-in">
             <keep-alive :include="cachedViews">
@@ -64,19 +70,28 @@
         </router-view>
       </el-main>
     </el-container>
+    
+    <!-- Mobile Bottom Navigation -->
+    <MobileBottomNav />
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
+import { useResponsive } from '@/composables/useResponsive'
+import MobileBottomNav from '@/components/MobileBottomNav.vue'
 
 const route = useRoute()
 const { isDark, toggleTheme, initTheme } = useTheme()
+const { isMobile } = useResponsive()
 
 const activeMenu = computed(() => route.path)
 const currentTitle = computed(() => route.meta.title as string || 'Dashboard')
+
+// Responsive sidebar width
+const sidebarWidth = computed(() => '200px')
 
 // Cache main views for faster switching (exclude detail pages)
 const cachedViews = ref([
@@ -100,17 +115,26 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables.scss';
+@import '@/styles/utilities.scss';
+
 .main-layout {
   height: 100vh;
   background-color: var(--bg-primary);
+  position: relative;
 }
 
 .sidebar {
   background-color: var(--bg-secondary);
   border-right: 1px solid var(--border-color);
+  transition: all $transition-base;
+  z-index: $z-sticky;
+  overflow-y: auto;
+  overflow-x: hidden;
+  @include custom-scrollbar;
 
   .logo {
-    height: 60px;
+    height: $header-height;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -118,14 +142,32 @@ onMounted(() => {
     
     h2 {
       color: var(--accent-color);
-      font-size: 20px;
-      font-weight: bold;
+      font-size: $font-size-xl;
+      font-weight: $font-weight-bold;
+      margin: 0;
     }
   }
 }
 
 .sidebar-menu {
   border: none;
+  padding: $spacing-md 0;
+  
+  :deep(.el-menu-item) {
+    margin: $spacing-xs $spacing-md;
+    border-radius: $radius-md;
+    transition: all $transition-fast;
+    
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+    
+    &.is-active {
+      background-color: var(--info-bg);
+      color: var(--accent-color);
+      font-weight: $font-weight-medium;
+    }
+  }
 }
 
 .header {
@@ -134,31 +176,61 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 $spacing-2xl;
+  height: $header-height;
+  z-index: $z-sticky;
+
+  @include mobile {
+    padding: 0 $spacing-lg;
+    height: $header-height-mobile;
+  }
 
   .header-left {
+    display: flex;
+    align-items: center;
+    gap: $spacing-lg;
+    
     .breadcrumb {
-      font-size: 18px;
-      font-weight: 500;
+      font-size: $font-size-lg;
+      font-weight: $font-weight-medium;
       color: var(--text-primary);
+      
+      @include mobile {
+        font-size: $font-size-base;
+      }
     }
   }
 
   .header-right {
     display: flex;
-    gap: 20px;
+    gap: $spacing-xl;
+    
+    @include mobile {
+      gap: $spacing-lg;
+    }
 
     .header-icon {
       font-size: 20px;
       cursor: pointer;
       color: var(--text-secondary);
+      transition: all $transition-fast;
+      @include focus-visible;
+      
+      @include mobile {
+        font-size: 18px;
+      }
       
       &:hover {
         color: var(--accent-color);
+        transform: translateY(-1px);
       }
 
       &.theme-switcher {
         font-size: 22px;
+        
+        @include mobile {
+          font-size: 20px;
+        }
         
         &:hover {
           transform: rotate(20deg);
@@ -170,14 +242,26 @@ onMounted(() => {
 
 .main-content {
   background-color: var(--bg-primary);
-  padding: 20px;
+  padding: $spacing-2xl;
   overflow-y: auto;
+  overflow-x: hidden;
+  @include custom-scrollbar;
+  
+  @include mobile {
+    padding: $spacing-lg;
+    padding-bottom: calc($bottom-nav-height + $spacing-lg);
+  }
+  
+  &.mobile-content {
+    // Additional mobile-specific adjustments
+    height: calc(100vh - $header-height-mobile - $bottom-nav-height);
+  }
 }
 
 // Route transition animations
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: all 0.15s ease;
+  transition: all $transition-base;
 }
 
 .fade-slide-enter-from {

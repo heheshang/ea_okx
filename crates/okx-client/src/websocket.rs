@@ -241,7 +241,7 @@ impl OkxWebSocketClient {
 
         let mut ws = self.private_ws.lock().await;
         if let Some(ws) = ws.as_mut() {
-            ws.send(WsMessage::Text(auth_msg.to_string()))
+            ws.send(WsMessage::Text(auth_msg.to_string().into()))
                 .await
                 .map_err(|e| Error::WebSocketSend(e.to_string()))?;
 
@@ -324,7 +324,7 @@ impl OkxWebSocketClient {
 
         let mut ws = ws_lock.lock().await;
         if let Some(ws) = ws.as_mut() {
-            ws.send(WsMessage::Text(sub_msg.to_string()))
+            ws.send(WsMessage::Text(sub_msg.to_string().into()))
                 .await
                 .map_err(|e| Error::WebSocketSend(e.to_string()))?;
 
@@ -357,7 +357,7 @@ impl OkxWebSocketClient {
 
         let mut ws = ws_lock.lock().await;
         if let Some(ws) = ws.as_mut() {
-            ws.send(WsMessage::Text(unsub_msg.to_string()))
+            ws.send(WsMessage::Text(unsub_msg.to_string().into()))
                 .await
                 .map_err(|e| Error::WebSocketSend(e.to_string()))?;
 
@@ -395,14 +395,14 @@ impl OkxWebSocketClient {
 
                 // Send ping to public channel
                 if let Some(ws) = public_ws.lock().await.as_mut() {
-                    if let Err(e) = ws.send(WsMessage::Text("ping".to_string())).await {
+                    if let Err(e) = ws.send(WsMessage::Text("ping".to_string().into())).await {
                         warn!("Failed to send ping to public channel: {}", e);
                     }
                 }
 
                 // Send ping to private channel
                 if let Some(ws) = private_ws.lock().await.as_mut() {
-                    if let Err(e) = ws.send(WsMessage::Text("ping".to_string())).await {
+                    if let Err(e) = ws.send(WsMessage::Text("ping".to_string().into())).await {
                         warn!("Failed to send ping to private channel: {}", e);
                     }
                 }

@@ -1,0 +1,232 @@
+// Button Utilities and Mixins
+@import './variables.scss';
+
+// Button Size Mixins
+@mixin button-large {
+  height: $touch-target-comfortable;
+  padding: 0 $spacing-2xl;
+  font-size: $font-size-base;
+  border-radius: $radius-md;
+  
+  .el-icon {
+    font-size: 18px;
+  }
+}
+
+@mixin button-default {
+  height: $touch-target-min;
+  padding: 0 $spacing-xl;
+  font-size: $font-size-sm;
+  border-radius: $radius-md;
+  
+  .el-icon {
+    font-size: 16px;
+  }
+}
+
+@mixin button-small {
+  height: 32px;
+  padding: 0 $spacing-lg;
+  font-size: $font-size-xs;
+  border-radius: $radius-sm;
+  
+  .el-icon {
+    font-size: 14px;
+  }
+}
+
+// Responsive Button Mixin
+@mixin responsive-button {
+  min-height: $touch-target-min;
+  padding: $spacing-md $spacing-lg;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-md;
+  transition: all $transition-fast;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  white-space: nowrap;
+  
+  @include mobile {
+    min-height: $touch-target-comfortable;
+    padding: $spacing-md $spacing-lg;
+    font-size: $font-size-sm;
+    
+    // Hide text on extra small screens, keep icon
+    @media (max-width: 480px) {
+      padding: $spacing-md;
+      
+      .btn-text {
+        display: none;
+      }
+    }
+  }
+  
+  &:active {
+    transform: scale(0.97);
+  }
+  
+  &:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+  }
+}
+
+// Icon Button Mixin
+@mixin icon-button {
+  width: $touch-target-min;
+  height: $touch-target-min;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: $radius-md;
+  transition: all $transition-fast;
+  
+  @include mobile {
+    width: $touch-target-comfortable;
+    height: $touch-target-comfortable;
+  }
+  
+  &:hover {
+    background-color: var(--hover-bg);
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// Button Group Mixin
+@mixin button-group {
+  display: flex;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+  
+  @include mobile {
+    gap: $spacing-xs;
+    
+    > * {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+}
+
+// FAB (Floating Action Button) Mixin
+@mixin fab-button {
+  position: fixed;
+  bottom: calc($bottom-nav-height + $spacing-lg);
+  right: $spacing-lg;
+  width: 56px;
+  height: 56px;
+  border-radius: $radius-full;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: $z-fixed;
+  transition: all $transition-base;
+  
+  @include mobile {
+    bottom: calc($bottom-nav-height + $spacing-xl);
+  }
+  
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// Action Button Bar (Bottom Sheet Style)
+@mixin action-button-bar {
+  display: flex;
+  gap: $spacing-md;
+  padding: $spacing-lg;
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  
+  @include mobile {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: $z-sticky;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  > button {
+    flex: 1;
+  }
+}
+
+// Segmented Button Group
+@mixin segmented-buttons {
+  display: inline-flex;
+  border-radius: $radius-md;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  
+  > button {
+    border-radius: 0;
+    border: none;
+    border-right: 1px solid var(--border-color);
+    
+    &:last-child {
+      border-right: none;
+    }
+    
+    &:hover {
+      background-color: var(--hover-bg);
+    }
+    
+    &.active {
+      background-color: var(--accent-color);
+      color: white;
+    }
+  }
+}
+
+// Utility Classes
+.btn-responsive {
+  @include responsive-button;
+}
+
+.btn-icon {
+  @include icon-button;
+}
+
+.btn-group {
+  @include button-group;
+}
+
+.btn-fab {
+  @include fab-button;
+}
+
+.action-bar {
+  @include action-button-bar;
+}
+
+// Button Text Visibility
+.btn-text {
+  @media (max-width: 480px) {
+    &.hide-xs {
+      display: none;
+    }
+  }
+}
+
+// Full Width Button on Mobile
+.btn-full-mobile {
+  @include mobile {
+    width: 100%;
+  }
+}

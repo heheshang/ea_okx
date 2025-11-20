@@ -8,10 +8,13 @@
             <el-card shadow="never">
               <template #header>
                 <div class="card-header">
-                  <span>OKX API Configuration</span>
-                  <el-button type="primary" size="small" @click="showAddApiDialog = true">
+                  <div class="header-title">
+                    <el-icon><Key /></el-icon>
+                    <span>OKX API Configuration</span>
+                  </div>
+                  <el-button type="primary" size="small" @click="showAddApiDialog = true" class="add-api-btn">
                     <el-icon><Plus /></el-icon>
-                    Add API Key
+                    <span class="btn-text">Add API Key</span>
                   </el-button>
                 </div>
               </template>
@@ -64,8 +67,11 @@
           <!-- System Settings -->
           <el-tab-pane label="System Settings" name="system">
             <el-card shadow="never">
-              <el-form :model="systemSettings" label-width="200px" label-position="left">
-                <el-divider content-position="left">General</el-divider>
+              <el-form :model="systemSettings" :label-width="isMobile ? '180px' : '200px'" label-position="left">
+                <el-divider content-position="left">
+                  <el-icon><Setting /></el-icon>
+                  <span>General</span>
+                </el-divider>
                 <el-form-item label="Theme">
                   <el-radio-group v-model="systemSettings.theme">
                     <el-radio label="Dark">Dark</el-radio>
@@ -87,7 +93,10 @@
                   </el-select>
                 </el-form-item>
 
-                <el-divider content-position="left">Trading</el-divider>
+                <el-divider content-position="left">
+                  <el-icon><Connection /></el-icon>
+                  <span>Trading</span>
+                </el-divider>
                 <el-form-item label="Auto-Reconnect">
                   <el-switch v-model="systemSettings.autoReconnect" />
                 </el-form-item>
@@ -111,7 +120,10 @@
                   />
                 </el-form-item>
 
-                <el-divider content-position="left">Notifications</el-divider>
+                <el-divider content-position="left">
+                  <el-icon><InfoFilled /></el-icon>
+                  <span>Notifications</span>
+                </el-divider>
                 <el-form-item label="Enable Desktop Notifications">
                   <el-switch v-model="systemSettings.desktopNotifications" />
                 </el-form-item>
@@ -123,8 +135,15 @@
                 </el-form-item>
 
                 <el-form-item>
-                  <el-button type="primary" @click="saveSystemSettings">Save Settings</el-button>
-                  <el-button @click="resetSystemSettings">Reset to Default</el-button>
+                  <el-space>
+                    <el-button type="primary" @click="saveSystemSettings" class="settings-action-btn">
+                      <el-icon><Setting /></el-icon>
+                      <span class="btn-text">Save Settings</span>
+                    </el-button>
+                    <el-button @click="resetSystemSettings" class="settings-action-btn">
+                      <span class="btn-text">Reset to Default</span>
+                    </el-button>
+                  </el-space>
                 </el-form-item>
               </el-form>
             </el-card>
@@ -134,9 +153,12 @@
           <el-tab-pane label="Database" name="database">
             <el-card shadow="never">
               <template #header>
-                <span>Database Configuration</span>
+                <div class="card-header">
+                  <el-icon><Connection /></el-icon>
+                  <span>Database Configuration</span>
+                </div>
               </template>
-              <el-form :model="databaseConfig" label-width="200px" label-position="left">
+              <el-form :model="databaseConfig" :label-width="isMobile ? '140px' : '200px'" label-position="left">
                 <el-form-item label="PostgreSQL Host">
                   <el-input v-model="databaseConfig.host" placeholder="localhost" />
                 </el-form-item>
@@ -177,10 +199,15 @@
                 </el-form-item>
 
                 <el-form-item>
-                  <el-button type="primary" @click="testDatabaseConnection">
-                    Test Connection
-                  </el-button>
-                  <el-button type="primary" @click="saveDatabaseConfig">Save Configuration</el-button>
+                  <el-space>
+                    <el-button type="primary" @click="testDatabaseConnection" class="db-action-btn">
+                      <el-icon><Connection /></el-icon>
+                      <span class="btn-text">Test Connection</span>
+                    </el-button>
+                    <el-button type="primary" @click="saveDatabaseConfig" class="db-action-btn">
+                      <span class="btn-text">Save Configuration</span>
+                    </el-button>
+                  </el-space>
                 </el-form-item>
               </el-form>
             </el-card>
@@ -229,7 +256,7 @@
     </el-row>
 
     <!-- Add API Key Dialog -->
-    <el-dialog v-model="showAddApiDialog" title="Add API Key" width="600px">
+    <el-dialog v-model="showAddApiDialog" title="Add API Key" :width="isMobile ? '90%' : '600px'">
       <el-form :model="newApiKey" label-width="120px">
         <el-form-item label="Name">
           <el-input v-model="newApiKey.name" placeholder="e.g., Main Trading Account" />
@@ -269,10 +296,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Key, Setting, Connection, InfoFilled } from '@element-plus/icons-vue'
+import { useResponsive } from '@/composables/useResponsive'
+
+const { isMobile } = useResponsive()
 
 // Define component name for keep-alive
 defineOptions({
@@ -454,15 +484,64 @@ const viewLogs = () => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables.scss';
+@import '@/styles/utilities.scss';
+
 .settings {
   .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+    
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+    }
+  }
+  
+  .add-api-btn,
+  .settings-action-btn,
+  .db-action-btn {
+    min-height: $touch-target-min;
+    
+    @include mobile {
+      min-height: $touch-target-comfortable;
+    }
+    
+    @media (max-width: 480px) {
+      .btn-text {
+        display: none;
+      }
+    }
   }
 
   .mono {
     font-family: 'Courier New', monospace;
+    
+    @include mobile {
+      font-size: $font-size-xs;
+    }
+  }
+  
+  :deep(.el-form-item__label) {
+    @include mobile {
+      font-size: $font-size-sm;
+    }
+  }
+  
+  :deep(.el-divider__text) {
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+    
+    .el-icon {
+      font-size: $font-size-base;
+    }
   }
 
   :deep(.el-tabs--border-card) {
@@ -512,11 +591,6 @@ const viewLogs = () => {
 
   :deep(.el-descriptions) {
     --el-descriptions-item-bordered-label-background: var(--bg-tertiary);
-  }
-
-  :deep(.el-divider__text) {
-    background-color: var(--bg-secondary);
-    color: var(--text-secondary);
   }
 }
 </style>

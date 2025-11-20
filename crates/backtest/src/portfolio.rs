@@ -219,7 +219,7 @@ mod tests {
             OrderSide::Buy,
             OrderType::Market,
             ea_okx_core::Quantity::new(dec!(0.1)).unwrap(),
-            Some(Price::new(dec!(50000.0))),
+            Some(ea_okx_core::Price::new(dec!(50000.0)).unwrap()),
         );
 
         let fill = Fill {

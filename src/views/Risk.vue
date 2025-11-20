@@ -2,7 +2,7 @@
   <div class="risk-center">
     <!-- Risk Summary Cards -->
     <el-row :gutter="20">
-      <el-col :span="6" v-for="metric in riskMetrics" :key="metric.label">
+      <el-col :xs="12" :sm="12" :md="6" v-for="metric in riskMetrics" :key="metric.label">
         <el-card class="risk-card" shadow="hover">
           <div class="risk-content">
             <div class="risk-icon" :class="metric.status">
@@ -20,12 +20,12 @@
 
     <!-- VaR Charts -->
     <el-row :gutter="20" class="mt-20">
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
               <span>Value at Risk (VaR)</span>
-              <el-space>
+              <el-space wrap :size="10">
                 <el-select v-model="varMethod" size="small" style="width: 150px">
                   <el-option label="Historical" value="historical" />
                   <el-option label="Parametric" value="parametric" />
@@ -41,7 +41,7 @@
           <div class="chart-container" ref="varChartRef"></div>
         </el-card>
       </el-col>
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" class="mt-mobile">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
@@ -60,110 +60,170 @@
 
     <!-- Risk Limits Configuration -->
     <el-row :gutter="20" class="mt-20">
-      <el-col :span="12">
-        <el-card shadow="hover">
+      <el-col :xs="24" :sm="24" :md="12">
+        <el-card shadow="hover" class="risk-limits-card">
           <template #header>
             <div class="card-header">
-              <span>Risk Limits</span>
-              <el-button size="small" type="primary" @click="saveRiskLimits">
+              <div class="header-left">
+                <el-icon class="header-icon"><Lock /></el-icon>
+                <span>Risk Limits</span>
+              </div>
+              <el-button size="small" type="primary" @click="saveRiskLimits" class="save-btn">
                 <el-icon><Select /></el-icon>
-                Save
+                <span class="btn-text">Save</span>
               </el-button>
             </div>
           </template>
-          <el-form :model="riskLimits" label-width="200px" label-position="left">
-            <el-divider content-position="left">Position Limits</el-divider>
-            <el-form-item label="Max Position Size">
-              <el-input-number
-                v-model="riskLimits.maxPositionSize"
-                :min="0"
-                :step="1000"
-                controls-position="right"
-              />
-              <span class="unit">USDT</span>
+          <el-form :model="riskLimits" :label-width="isMobile ? '140px' : '200px'" label-position="left" class="risk-form">
+            <el-divider content-position="left">
+              <el-icon><TrendCharts /></el-icon>
+              <span>Position Limits</span>
+            </el-divider>
+            <el-form-item label="Max Position Size" class="form-item-enhanced">
+              <div class="input-group">
+                <el-input-number
+                  v-model="riskLimits.maxPositionSize"
+                  :min="0"
+                  :step="1000"
+                  controls-position="right"
+                  class="limit-input"
+                />
+                <span class="unit">USDT</span>
+              </div>
             </el-form-item>
-            <el-form-item label="Max Leverage">
-              <el-input-number
-                v-model="riskLimits.maxLeverage"
-                :min="1"
-                :max="10"
-                :step="0.5"
-                controls-position="right"
-              />
-              <span class="unit">x</span>
+            <el-form-item label="Max Leverage" class="form-item-enhanced">
+              <div class="input-group">
+                <el-slider
+                  v-model="riskLimits.maxLeverage"
+                  :min="1"
+                  :max="10"
+                  :step="0.5"
+                  :show-tooltip="true"
+                  :marks="{ 1: '1x', 5: '5x', 10: '10x' }"
+                  class="leverage-slider"
+                />
+                <span class="slider-value">{{ riskLimits.maxLeverage.toFixed(1) }}x</span>
+              </div>
             </el-form-item>
-            <el-form-item label="Max Concentration">
-              <el-input-number
-                v-model="riskLimits.maxConcentration"
-                :min="0"
-                :max="100"
-                :step="5"
-                controls-position="right"
-              />
-              <span class="unit">%</span>
+            <el-form-item label="Max Concentration" class="form-item-enhanced">
+              <div class="input-group">
+                <el-slider
+                  v-model="riskLimits.maxConcentration"
+                  :min="0"
+                  :max="100"
+                  :step="5"
+                  :show-tooltip="true"
+                  class="concentration-slider"
+                />
+                <span class="slider-value">{{ riskLimits.maxConcentration }}%</span>
+              </div>
             </el-form-item>
-            <el-form-item label="Max Open Positions">
-              <el-input-number
-                v-model="riskLimits.maxOpenPositions"
-                :min="1"
-                :max="50"
-                controls-position="right"
-              />
-            </el-form-item>
-
-            <el-divider content-position="left">Loss Limits</el-divider>
-            <el-form-item label="Daily Loss Limit">
-              <el-input-number
-                v-model="riskLimits.dailyLossLimit"
-                :min="0"
-                :max="100"
-                :step="1"
-                controls-position="right"
-              />
-              <span class="unit">%</span>
-            </el-form-item>
-            <el-form-item label="Max Drawdown Limit">
-              <el-input-number
-                v-model="riskLimits.maxDrawdownLimit"
-                :min="0"
-                :max="100"
-                :step="5"
-                controls-position="right"
-              />
-              <span class="unit">%</span>
+            <el-form-item label="Max Open Positions" class="form-item-enhanced">
+              <div class="input-group">
+                <el-input-number
+                  v-model="riskLimits.maxOpenPositions"
+                  :min="1"
+                  :max="50"
+                  controls-position="right"
+                  class="limit-input"
+                />
+              </div>
             </el-form-item>
 
-            <el-divider content-position="left">Stop Loss/Take Profit</el-divider>
-            <el-form-item label="Default Stop Loss">
-              <el-input-number
-                v-model="riskLimits.stopLossPercent"
-                :min="0"
-                :max="50"
-                :step="0.5"
-                controls-position="right"
-              />
-              <span class="unit">%</span>
+            <el-divider content-position="left">
+              <el-icon><Warning /></el-icon>
+              <span>Loss Limits</span>
+            </el-divider>
+            <el-form-item label="Daily Loss Limit" class="form-item-enhanced">
+              <div class="input-group">
+                <el-slider
+                  v-model="riskLimits.dailyLossLimit"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  :show-tooltip="true"
+                  class="loss-slider"
+                />
+                <span class="slider-value">{{ riskLimits.dailyLossLimit }}%</span>
+              </div>
             </el-form-item>
-            <el-form-item label="Default Take Profit">
-              <el-input-number
-                v-model="riskLimits.takeProfitPercent"
-                :min="0"
-                :max="100"
-                :step="1"
-                controls-position="right"
-              />
-              <span class="unit">%</span>
+            <el-form-item label="Max Drawdown Limit" class="form-item-enhanced">
+              <div class="input-group">
+                <el-slider
+                  v-model="riskLimits.maxDrawdownLimit"
+                  :min="0"
+                  :max="100"
+                  :step="5"
+                  :show-tooltip="true"
+                  class="loss-slider"
+                />
+                <span class="slider-value">{{ riskLimits.maxDrawdownLimit }}%</span>
+              </div>
+            </el-form-item>
+
+            <el-divider content-position="left">
+              <el-icon><Select /></el-icon>
+              <span>Stop Loss/Take Profit</span>
+            </el-divider>
+            <el-form-item label="Default Stop Loss" class="form-item-enhanced">
+              <div class="input-group">
+                <el-input-number
+                  v-model="riskLimits.stopLossPercent"
+                  :min="0"
+                  :max="50"
+                  :step="0.5"
+                  :precision="1"
+                  controls-position="right"
+                  class="limit-input"
+                />
+                <span class="unit">%</span>
+              </div>
+            </el-form-item>
+            <el-form-item label="Default Take Profit" class="form-item-enhanced">
+              <div class="input-group">
+                <el-input-number
+                  v-model="riskLimits.takeProfitPercent"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  controls-position="right"
+                  class="limit-input"
+                />
+                <span class="unit">%</span>
+              </div>
             </el-form-item>
           </el-form>
         </el-card>
       </el-col>
 
-      <el-col :span="12">
-        <el-card shadow="hover">
+      <el-col :xs="24" :sm="24" :md="12" class="mt-mobile">
+        <el-card shadow="hover" class="heatmap-card">
           <template #header>
-            <span>Risk Heat Map</span>
+            <div class="card-header">
+              <div class="header-left">
+                <el-icon class="header-icon"><TrendCharts /></el-icon>
+                <span>Risk Heat Map</span>
+              </div>
+              <el-tooltip content="Higher values indicate higher risk" placement="top">
+                <el-icon class="info-icon"><InfoFilled /></el-icon>
+              </el-tooltip>
+            </div>
           </template>
-          <div class="chart-container" ref="heatmapChartRef"></div>
+          <div class="chart-container heatmap-container" ref="heatmapChartRef"></div>
+          <div class="heatmap-legend">
+            <div class="legend-item">
+              <span class="legend-color" style="background: #57ab5a"></span>
+              <span class="legend-text">Low Risk</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color" style="background: #c69026"></span>
+              <span class="legend-text">Medium Risk</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color" style="background: #e5534b"></span>
+              <span class="legend-text">High Risk</span>
+            </div>
+          </div>
         </el-card>
 
         <el-card shadow="hover" class="mt-20">
@@ -248,13 +308,16 @@
 import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { ElMessage } from 'element-plus'
-import { Select, Warning, TrendCharts, Lock } from '@element-plus/icons-vue'
+import { Select, Warning, TrendCharts, Lock, InfoFilled } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { useResponsive } from '@/composables/useResponsive'
 
 // Define component name for keep-alive
 defineOptions({
   name: 'Risk'
 })
+
+const { isMobile } = useResponsive()
 
 interface RiskLimits {
   maxPositionSize: number
@@ -515,23 +578,41 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables.scss';
+@import '@/styles/utilities.scss';
+
 .risk-center {
   .mt-20 {
-    margin-top: 20px;
+    margin-top: $spacing-xl;
+  }
+  
+  .mt-mobile {
+    @include mobile {
+      margin-top: $spacing-xl;
+    }
   }
 
   .risk-card {
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
+    margin-bottom: 15px;
 
     :deep(.el-card__body) {
       padding: 20px;
+      
+      @media (max-width: 768px) {
+        padding: 15px;
+      }
     }
 
     .risk-content {
       display: flex;
       align-items: center;
       gap: 15px;
+      
+      @media (max-width: 768px) {
+        gap: 10px;
+      }
 
       .risk-icon {
         width: 50px;
@@ -541,6 +622,16 @@ onMounted(() => {
         align-items: center;
         justify-content: center;
         color: white;
+        flex-shrink: 0;
+        
+        @media (max-width: 768px) {
+          width: 40px;
+          height: 40px;
+          
+          :deep(.el-icon) {
+            font-size: 22px !important;
+          }
+        }
 
         &.success {
           background-color: #57ab5a;
@@ -557,11 +648,16 @@ onMounted(() => {
 
       .risk-info {
         flex: 1;
+        min-width: 0;
 
         .risk-label {
           font-size: 14px;
           color: var(--text-secondary);
           margin-bottom: 5px;
+          
+          @media (max-width: 768px) {
+            font-size: 12px;
+          }
         }
 
         .risk-value {
@@ -569,10 +665,18 @@ onMounted(() => {
           font-weight: bold;
           color: var(--text-primary);
           margin-bottom: 5px;
+          
+          @media (max-width: 768px) {
+            font-size: 18px;
+          }
         }
 
         .risk-status {
           font-size: 12px;
+          
+          @media (max-width: 768px) {
+            font-size: 11px;
+          }
 
           &.success {
             color: #57ab5a;
@@ -594,15 +698,173 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+      
+      .header-icon {
+        font-size: 20px;
+        color: var(--accent-color);
+      }
+    }
+    
+    .info-icon {
+      font-size: 18px;
+      color: var(--text-secondary);
+      cursor: help;
+      transition: color $transition-fast;
+      
+      &:hover {
+        color: var(--accent-color);
+      }
+    }
+    
+    span {
+      font-weight: $font-weight-medium;
+      
+      @include mobile {
+        font-size: $font-size-sm;
+      }
+    }
+    
+    .save-btn {
+      min-height: 32px;
+      
+      @include mobile {
+        min-height: 36px;
+        
+        .btn-text {
+          @media (max-width: 480px) {
+            display: none;
+          }
+        }
+      }
+    }
   }
 
   .chart-container {
     height: 300px;
+    
+    @include mobile {
+      height: 250px;
+    }
   }
-
-  .unit {
-    margin-left: 10px;
-    color: var(--text-secondary);
+  
+  // Risk Limits Card
+  .risk-limits-card {
+    .risk-form {
+      :deep(.el-divider) {
+        margin: $spacing-2xl 0 $spacing-lg;
+        
+        .el-divider__text {
+          display: flex;
+          align-items: center;
+          gap: $spacing-sm;
+          font-weight: $font-weight-semibold;
+          color: var(--text-primary);
+          
+          .el-icon {
+            font-size: 16px;
+            color: var(--accent-color);
+          }
+        }
+      }
+      
+      .form-item-enhanced {
+        margin-bottom: $spacing-xl;
+        
+        .input-group {
+          display: flex;
+          align-items: center;
+          gap: $spacing-md;
+          width: 100%;
+          
+          .limit-input {
+            flex: 1;
+            
+            @include mobile {
+              width: 100%;
+            }
+          }
+          
+          .leverage-slider,
+          .concentration-slider,
+          .loss-slider {
+            flex: 1;
+            margin-right: $spacing-lg;
+            
+            @include mobile {
+              margin-right: $spacing-md;
+            }
+          }
+          
+          .slider-value {
+            min-width: 50px;
+            text-align: right;
+            font-weight: $font-weight-semibold;
+            color: var(--accent-color);
+            font-size: $font-size-base;
+          }
+          
+          .unit {
+            min-width: 50px;
+            color: var(--text-secondary);
+            font-size: $font-size-sm;
+          }
+        }
+      }
+    }
+  }
+  
+  // Heat Map Card
+  .heatmap-card {
+    .heatmap-container {
+      margin-bottom: $spacing-lg;
+    }
+    
+    .heatmap-legend {
+      display: flex;
+      justify-content: center;
+      gap: $spacing-2xl;
+      padding: $spacing-lg 0;
+      border-top: 1px solid var(--border-color);
+      
+      @include mobile {
+        flex-direction: column;
+        gap: $spacing-md;
+      }
+      
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+        
+        .legend-color {
+          width: 20px;
+          height: 20px;
+          border-radius: $radius-sm;
+          
+          @include mobile {
+            width: 16px;
+            height: 16px;
+          }
+        }
+        
+        .legend-text {
+          font-size: $font-size-sm;
+          color: var(--text-secondary);
+          font-weight: $font-weight-medium;
+          
+          @include mobile {
+            font-size: $font-size-xs;
+          }
+        }
+      }
+    }
   }
 
   .alert-timeline {

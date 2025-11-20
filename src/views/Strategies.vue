@@ -1,31 +1,160 @@
 <template>
   <div class="strategies-page">
+    <!-- Header Section -->
     <div class="page-header">
       <h2>Strategy Management</h2>
-      <el-space>
-        <el-input
-          v-model="searchText"
-          placeholder="Search strategies..."
-          :prefix-icon="Search"
-          style="width: 250px"
-          clearable
-        />
-        <el-select v-model="statusFilter" placeholder="Filter by status" style="width: 150px" clearable>
-          <el-option label="All" value="" />
-          <el-option label="Active" value="Active" />
-          <el-option label="Draft" value="Draft" />
-          <el-option label="Paused" value="Paused" />
-          <el-option label="Stopped" value="Stopped" />
-        </el-select>
-        <el-button type="primary" @click="showCreateDialog = true">
-          <el-icon><Plus /></el-icon>
-          Create Strategy
-        </el-button>
-      </el-space>
+      <el-button type="primary" @click="showCreateDialog = true" class="create-btn">
+        <el-icon><Plus /></el-icon>
+        <span class="btn-text">Create Strategy</span>
+      </el-button>
     </div>
 
-    <el-card shadow="hover">
-      <el-table :data="filteredStrategies" style="width: 100%" v-loading="loading">
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <el-input
+        v-model="searchText"
+        placeholder="Search strategies..."
+        :prefix-icon="Search"
+        class="search-input"
+        clearable
+      />
+      <el-select v-model="statusFilter" placeholder="Filter by status" class="status-filter" clearable>
+        <el-option label="All" value="" />
+        <el-option label="Active" value="Active" />
+        <el-option label="Draft" value="Draft" />
+        <el-option label="Paused" value="Paused" />
+        <el-option label="Stopped" value="Stopped" />
+      </el-select>
+      <el-select v-model="typeFilter" placeholder="Filter by type" class="type-filter" clearable v-if="!isMobile">
+        <el-option label="All Types" value="" />
+        <el-option label="MA Crossover" value="MA Crossover" />
+        <el-option label="Grid Trading" value="Grid Trading" />
+        <el-option label="RSI Strategy" value="RSI Strategy" />
+      </el-select>
+    </div>
+
+    <!-- View Toggle -->
+    <div class="view-toggle" v-if="!isMobile">
+      <el-radio-group v-model="viewMode" size="small">
+        <el-radio-button value="grid">
+          <el-icon><Grid /></el-icon>
+          Grid
+        </el-radio-button>
+        <el-radio-button value="list">
+          <el-icon><List /></el-icon>
+          List
+        </el-radio-button>
+      </el-radio-group>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-container">
+      <el-skeleton :rows="3" animated />
+    </div>
+
+    <!-- Grid View -->
+    <div v-else-if="viewMode === 'grid' || isMobile" class="strategies-grid">
+      <div
+        v-for="strategy in filteredStrategies"
+        :key="strategy.id"
+        class="strategy-card"
+        @click="handleView(strategy)"
+      >
+        <div class="card-header">
+          <div class="strategy-info">
+            <h3 class="strategy-name">{{ strategy.name }}</h3>
+            <el-tag :type="getStatusType(strategy.status)" size="small" class="status-tag">
+              {{ strategy.status }}
+            </el-tag>
+          </div>
+          <el-dropdown trigger="click" @click.stop>
+            <el-icon class="more-icon"><MoreFilled /></el-icon>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="handleView(strategy)">
+                  <el-icon><View /></el-icon>
+                  View Details
+                </el-dropdown-item>
+                <el-dropdown-item @click="handleEdit(strategy)">
+                  <el-icon><Edit /></el-icon>
+                  Edit
+                </el-dropdown-item>
+                <el-dropdown-item divided @click="handleDelete(strategy)" class="danger-item">
+                  <el-icon><Delete /></el-icon>
+                  Delete
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+
+        <div class="card-body">
+          <div class="info-row">
+            <span class="label">Type:</span>
+            <span class="value">{{ strategy.type }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Symbol:</span>
+            <span class="value symbol">{{ strategy.symbol }}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Trades:</span>
+            <span class="value">{{ strategy.trades }}</span>
+          </div>
+        </div>
+
+        <div class="card-stats">
+          <div class="stat-item">
+            <span class="stat-label">P&L</span>
+            <span class="stat-value" :class="strategy.pnl >= 0 ? 'positive' : 'negative'">
+              {{ formatPnL(strategy.pnl) }}
+            </span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-label">Win Rate</span>
+            <span class="stat-value">{{ (strategy.winRate * 100).toFixed(1) }}%</span>
+          </div>
+        </div>
+
+        <div class="card-footer" @click.stop>
+          <el-button
+            v-if="strategy.status === 'Draft' || strategy.status === 'Paused'"
+            type="success"
+            size="small"
+            @click="handleStart(strategy)"
+            class="action-btn"
+          >
+            <el-icon><VideoPlay /></el-icon>
+            Start
+          </el-button>
+          <el-button
+            v-if="strategy.status === 'Active'"
+            type="warning"
+            size="small"
+            @click="handlePause(strategy)"
+            class="action-btn"
+          >
+            <el-icon><VideoPause /></el-icon>
+            Pause
+          </el-button>
+          <el-button
+            v-if="strategy.status !== 'Stopped'"
+            type="danger"
+            size="small"
+            @click="handleStop(strategy)"
+            class="action-btn"
+          >
+            <el-icon><CircleClose /></el-icon>
+            Stop
+          </el-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- List View (Desktop Only) -->
+    <el-card v-else shadow="hover" class="table-card">
+      <el-table :data="filteredStrategies" style="width: 100%">
         <el-table-column prop="name" label="Name" width="200">
           <template #default="{ row }">
             <el-link @click="handleView(row)" type="primary">{{ row.name }}</el-link>
@@ -350,8 +479,12 @@ import {
   View,
   Edit,
   Delete,
+  MoreFilled,
+  Grid,
+  List,
 } from '@element-plus/icons-vue'
 import { useStrategyStore } from '@/stores/strategy'
+import { useResponsive } from '@/composables/useResponsive'
 
 // Define component name for keep-alive
 defineOptions({
@@ -360,10 +493,13 @@ defineOptions({
 
 const router = useRouter()
 const strategyStore = useStrategyStore()
+const { isMobile } = useResponsive()
 
 const loading = ref(false)
 const searchText = ref('')
 const statusFilter = ref('')
+const typeFilter = ref('')
+const viewMode = ref<'grid' | 'list'>('grid')
 const showCreateDialog = ref(false)
 const isEditing = ref(false)
 const currentStep = ref(0)
@@ -447,6 +583,10 @@ const filteredStrategies = computed(() => {
 
   if (statusFilter.value) {
     result = result.filter((s) => s.status === statusFilter.value)
+  }
+  
+  if (typeFilter.value) {
+    result = result.filter((s) => s.type === typeFilter.value)
   }
 
   return result
@@ -579,7 +719,7 @@ const handleSubmit = async () => {
 
   submitting.value = true
   try {
-    const strategyData = {
+    const strategyData: any = {
       ...strategyForm.value,
       status: 'Draft',
       pnl: 0,
@@ -598,7 +738,7 @@ const handleSubmit = async () => {
     } else {
       const result = await invoke('create_strategy', strategyData)
       strategyData.id = (result as any).id || String(Date.now())
-      strategies.value.push(strategyData as any)
+      strategies.value.push(strategyData)
       strategyStore.addStrategy(strategyData)
       ElMessage.success('Strategy created successfully')
     }
@@ -652,18 +792,241 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables.scss';
+@import '@/styles/utilities.scss';
+
 .strategies-page {
   .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: $spacing-xl;
 
     h2 {
       margin: 0;
-      font-size: 24px;
+      font-size: $font-size-3xl;
+      font-weight: $font-weight-bold;
       color: var(--text-primary);
+      
+      @include mobile {
+        font-size: $font-size-2xl;
+      }
     }
+    
+    .create-btn {
+      @include mobile {
+        .btn-text {
+          display: none;
+        }
+      }
+    }
+  }
+  
+  .filters-section {
+    display: flex;
+    gap: $spacing-md;
+    margin-bottom: $spacing-lg;
+    flex-wrap: wrap;
+    
+    .search-input {
+      flex: 1;
+      min-width: 200px;
+      
+      @include mobile {
+        min-width: 150px;
+      }
+    }
+    
+    .status-filter,
+    .type-filter {
+      width: 150px;
+      
+      @include mobile {
+        width: 130px;
+      }
+    }
+  }
+  
+  .view-toggle {
+    margin-bottom: $spacing-lg;
+    display: flex;
+    justify-content: flex-end;
+  }
+  
+  .loading-container {
+    margin-top: $spacing-3xl;
+  }
+  
+  // Grid View Styles
+  .strategies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: $spacing-xl;
+    
+    @include mobile {
+      grid-template-columns: 1fr;
+      gap: $spacing-lg;
+    }
+  }
+  
+  .strategy-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: $radius-lg;
+    padding: $spacing-xl;
+    transition: all $transition-base;
+    cursor: pointer;
+    
+    @include mobile {
+      padding: $spacing-lg;
+    }
+    
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px var(--shadow-color);
+      border-color: var(--accent-color);
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: $spacing-lg;
+      
+      .strategy-info {
+        flex: 1;
+        min-width: 0;
+        
+        .strategy-name {
+          font-size: $font-size-lg;
+          font-weight: $font-weight-semibold;
+          color: var(--text-primary);
+          margin: 0 0 $spacing-sm 0;
+          
+          @include mobile {
+            font-size: $font-size-base;
+          }
+        }
+        
+        .status-tag {
+          font-size: $font-size-xs;
+        }
+      }
+      
+      .more-icon {
+        font-size: 20px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: $spacing-xs;
+        border-radius: $radius-sm;
+        transition: all $transition-fast;
+        
+        &:hover {
+          background-color: var(--hover-bg);
+          color: var(--accent-color);
+        }
+      }
+    }
+    
+    .card-body {
+      margin-bottom: $spacing-lg;
+      
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: $spacing-sm 0;
+        border-bottom: 1px solid var(--border-color);
+        
+        &:last-child {
+          border-bottom: none;
+        }
+        
+        .label {
+          font-size: $font-size-sm;
+          color: var(--text-secondary);
+          font-weight: $font-weight-medium;
+        }
+        
+        .value {
+          font-size: $font-size-sm;
+          color: var(--text-primary);
+          font-weight: $font-weight-medium;
+          
+          &.symbol {
+            font-family: 'Courier New', monospace;
+            color: var(--accent-color);
+          }
+        }
+      }
+    }
+    
+    .card-stats {
+      display: flex;
+      gap: $spacing-lg;
+      padding: $spacing-lg;
+      background-color: var(--bg-tertiary);
+      border-radius: $radius-md;
+      margin-bottom: $spacing-lg;
+      
+      .stat-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: $spacing-xs;
+        
+        .stat-label {
+          font-size: $font-size-xs;
+          color: var(--text-secondary);
+          font-weight: $font-weight-medium;
+          text-transform: uppercase;
+        }
+        
+        .stat-value {
+          font-size: $font-size-xl;
+          font-weight: $font-weight-bold;
+          color: var(--text-primary);
+          
+          @include mobile {
+            font-size: $font-size-lg;
+          }
+          
+          &.positive {
+            color: var(--success-color);
+          }
+          
+          &.negative {
+            color: var(--danger-color);
+          }
+        }
+      }
+      
+      .stat-divider {
+        width: 1px;
+        background-color: var(--border-color);
+      }
+    }
+    
+    .card-footer {
+      display: flex;
+      gap: $spacing-sm;
+      flex-wrap: wrap;
+      
+      .action-btn {
+        flex: 1;
+        min-width: 80px;
+        
+        @include mobile {
+          font-size: $font-size-xs;
+        }
+      }
+    }
+  }
+  
+  // Table View Styles
+  .table-card {
+    margin-top: $spacing-lg;
   }
 
   .text-success {

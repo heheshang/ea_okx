@@ -2,12 +2,15 @@
   <div class="backtest">
     <!-- Backtest Configuration -->
     <el-row :gutter="20">
-      <el-col :span="8">
+      <el-col :xs="24" :sm="24" :md="8">
         <el-card shadow="hover">
           <template #header>
-            <span>Backtest Configuration</span>
+            <div class="card-header">
+              <el-icon><TrendCharts /></el-icon>
+              <span>Backtest Configuration</span>
+            </div>
           </template>
-          <el-form :model="backtestConfig" label-width="130px" label-position="left">
+          <el-form :model="backtestConfig" :label-width="isMobile ? '110px' : '130px'" label-position="left">
             <el-form-item label="Strategy">
               <el-select v-model="backtestConfig.strategyId" placeholder="Select strategy">
                 <el-option
@@ -71,25 +74,29 @@
                 type="primary"
                 :loading="isRunning"
                 @click="runBacktest"
-                style="width: 100%"
+                class="run-backtest-btn"
               >
-                {{ isRunning ? 'Running...' : 'Run Backtest' }}
+                <el-icon v-if="!isRunning"><TrendCharts /></el-icon>
+                <span class="btn-text">{{ isRunning ? 'Running...' : 'Run Backtest' }}</span>
               </el-button>
             </el-form-item>
           </el-form>
         </el-card>
       </el-col>
 
-      <el-col :span="16">
+      <el-col :xs="24" :sm="24" :md="16" class="mt-mobile">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
               <span>Performance Metrics</span>
-              <el-button size="small" :icon="Download" @click="exportResults">Export</el-button>
+              <el-button size="small" @click="exportResults" class="export-btn">
+                <el-icon><Download /></el-icon>
+                <span class="btn-text">Export</span>
+              </el-button>
             </div>
           </template>
           <el-row :gutter="15">
-            <el-col :span="8" v-for="metric in performanceMetrics" :key="metric.label">
+            <el-col :xs="12" :sm="8" :md="8" v-for="metric in performanceMetrics" :key="metric.label">
               <div class="metric-box">
                 <div class="metric-label">{{ metric.label }}</div>
                 <div
@@ -126,7 +133,7 @@
 
     <!-- Trade Analysis -->
     <el-row :gutter="20" class="mt-20">
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12">
         <el-card shadow="hover">
           <template #header>
             <span>Trade Distribution</span>
@@ -134,7 +141,7 @@
           <div class="chart-container" ref="tradeDistChartRef"></div>
         </el-card>
       </el-col>
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" class="mt-mobile">
         <el-card shadow="hover">
           <template #header>
             <span>Returns Distribution</span>
@@ -208,8 +215,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { ElMessage } from 'element-plus'
-import { Download } from '@element-plus/icons-vue'
+import { Download, TrendCharts } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { useResponsive } from '@/composables/useResponsive'
+
+const { isMobile } = useResponsive()
 
 // Define component name for keep-alive
 defineOptions({
@@ -444,38 +454,99 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables.scss';
+@import '@/styles/utilities.scss';
+
 .backtest {
   .mt-20 {
-    margin-top: 20px;
+    margin-top: $spacing-xl;
+  }
+  
+  .mt-mobile {
+    @include mobile {
+      margin-top: $spacing-xl;
+    }
   }
 
   .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+    
+    .el-icon {
+      margin-right: $spacing-xs;
+    }
+    
+    span {
+      @include mobile {
+        font-size: $font-size-sm;
+      }
+    }
+  }
+  
+  .run-backtest-btn {
+    width: 100%;
+    min-height: $touch-target-min;
+    
+    @include mobile {
+      min-height: $touch-target-comfortable;
+    }
+  }
+  
+  .export-btn {
+    @media (max-width: 480px) {
+      .btn-text {
+        display: none;
+      }
+    }
   }
 
   .metric-box {
-    padding: 15px;
+    padding: $spacing-lg;
     background-color: var(--bg-tertiary);
-    border-radius: 8px;
+    border-radius: $radius-md;
     text-align: center;
-    margin-bottom: 10px;
+    margin-bottom: $spacing-md;
+    transition: all $transition-base;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px var(--shadow-color);
+    }
+    
+    @include mobile {
+      padding: $spacing-md;
+    }
 
     .metric-label {
-      font-size: 13px;
+      font-size: $font-size-xs;
       color: var(--text-secondary);
-      margin-bottom: 8px;
+      margin-bottom: $spacing-sm;
+      font-weight: $font-weight-medium;
+      
+      @include mobile {
+        font-size: 11px;
+      }
     }
 
     .metric-value {
-      font-size: 20px;
-      font-weight: bold;
+      font-size: $font-size-xl;
+      font-weight: $font-weight-bold;
+      
+      @include mobile {
+        font-size: $font-size-base;
+      }
     }
   }
 
   .chart-container {
     height: 350px;
+    
+    @include mobile {
+      height: 250px;
+    }
   }
 
   .text-success {

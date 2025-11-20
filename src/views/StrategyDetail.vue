@@ -3,9 +3,12 @@
     <!-- Header with Controls -->
     <el-card shadow="hover" class="header-card">
       <el-row justify="space-between" align="middle">
-        <el-col :span="12">
-          <el-space alignment="center">
-            <el-button :icon="Back" @click="$router.back()">Back</el-button>
+        <el-col :xs="24" :sm="24" :md="12">
+          <el-space alignment="center" class="header-left-space">
+            <el-button @click="$router.back()" size="small" class="back-btn">
+              <el-icon><Back /></el-icon>
+              <span class="btn-text">Back</span>
+            </el-button>
             <div class="strategy-title">
               <h2>{{ strategyData.name }}</h2>
               <el-tag :type="getStatusType(strategyData.status)" size="large">
@@ -14,37 +17,43 @@
             </div>
           </el-space>
         </el-col>
-        <el-col :span="12" style="text-align: right">
-          <el-space>
+        <el-col :xs="24" :sm="24" :md="12" class="header-actions">
+          <el-space wrap>
             <el-button
               v-if="strategyData.status === 'Active'"
               type="warning"
               @click="pauseStrategy"
+              class="strategy-action-btn"
             >
               <el-icon><VideoPause /></el-icon>
-              Pause
+              <span class="btn-text">Pause</span>
             </el-button>
             <el-button
               v-if="strategyData.status === 'Paused'"
               type="success"
               @click="resumeStrategy"
+              class="strategy-action-btn"
             >
               <el-icon><VideoPlay /></el-icon>
-              Resume
+              <span class="btn-text">Resume</span>
             </el-button>
             <el-button
               v-if="['Draft', 'Paused'].includes(strategyData.status)"
               type="primary"
               @click="startStrategy"
+              class="strategy-action-btn"
             >
               <el-icon><VideoPlay /></el-icon>
-              Start
+              <span class="btn-text">Start</span>
             </el-button>
-            <el-button type="danger" @click="stopStrategy">
+            <el-button type="danger" @click="stopStrategy" class="strategy-action-btn">
               <el-icon><CircleClose /></el-icon>
-              Stop
+              <span class="btn-text">Stop</span>
             </el-button>
-            <el-button :icon="Edit" @click="editStrategy">Edit</el-button>
+            <el-button @click="editStrategy" class="strategy-action-btn">
+              <el-icon><Edit /></el-icon>
+              <span class="btn-text">Edit</span>
+            </el-button>
           </el-space>
         </el-col>
       </el-row>
@@ -52,7 +61,7 @@
 
     <!-- Performance Metrics -->
     <el-row :gutter="20" class="mt-20">
-      <el-col :span="6" v-for="metric in performanceMetrics" :key="metric.label">
+      <el-col :xs="12" :sm="12" :md="6" v-for="metric in performanceMetrics" :key="metric.label">
         <el-card shadow="hover" class="metric-card">
           <div class="metric-label">{{ metric.label }}</div>
           <div class="metric-value" :class="metric.value >= 0 ? 'text-success' : 'text-danger'">
@@ -67,7 +76,7 @@
 
     <!-- Performance Charts -->
     <el-row :gutter="20" class="mt-20">
-      <el-col :span="16">
+      <el-col :xs="24" :sm="24" :md="16">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
@@ -83,7 +92,7 @@
           <div class="chart-container" ref="equityChartRef"></div>
         </el-card>
       </el-col>
-      <el-col :span="8">
+      <el-col :xs="24" :sm="24" :md="8" class="mt-mobile">
         <el-card shadow="hover">
           <template #header>
             <span>Win/Loss Distribution</span>
@@ -95,7 +104,7 @@
 
     <!-- Strategy Configuration & Recent Trades -->
     <el-row :gutter="20" class="mt-20">
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12">
         <el-card shadow="hover">
           <template #header>
             <span>Strategy Configuration</span>
@@ -136,7 +145,7 @@
         </el-card>
       </el-col>
 
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" class="mt-mobile">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
@@ -211,6 +220,9 @@ import {
   CircleClose,
 } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { useResponsive } from '@/composables/useResponsive'
+
+const { isMobile } = useResponsive()
 
 const route = useRoute()
 const router = useRouter()
@@ -421,42 +433,112 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables.scss';
+@import '@/styles/utilities.scss';
+
 .strategy-detail {
   .mt-20 {
-    margin-top: 20px;
+    margin-top: $spacing-xl;
+  }
+  
+  .mt-mobile {
+    @include mobile {
+      margin-top: $spacing-xl;
+    }
   }
 
   .header-card {
-    margin-bottom: 20px;
+    margin-bottom: $spacing-xl;
+    
+    .header-left-space {
+      @include mobile {
+        margin-bottom: $spacing-lg;
+      }
+    }
+    
+    .header-actions {
+      @include mobile {
+        text-align: left !important;
+        margin-top: $spacing-lg;
+      }
+      
+      @include tablet {
+        text-align: right;
+      }
+      
+      @include desktop {
+        text-align: right;
+      }
+    }
+    
+    .back-btn,
+    .strategy-action-btn {
+      min-height: $touch-target-min;
+      
+      @include mobile {
+        min-height: $touch-target-comfortable;
+      }
+      
+      @media (max-width: 480px) {
+        .btn-text {
+          display: none;
+        }
+      }
+    }
 
     .strategy-title {
       display: flex;
       align-items: center;
-      gap: 15px;
+      gap: $spacing-lg;
+      flex-wrap: wrap;
 
       h2 {
         margin: 0;
+        
+        @include mobile {
+          font-size: $font-size-lg;
+        }
       }
     }
   }
 
   .metric-card {
     text-align: center;
+    margin-bottom: $spacing-lg;
+    transition: all $transition-base;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px var(--shadow-color);
+    }
 
     .metric-label {
-      font-size: 14px;
+      font-size: $font-size-sm;
       color: var(--text-secondary);
-      margin-bottom: 10px;
+      margin-bottom: $spacing-md;
+      font-weight: $font-weight-medium;
+      
+      @include mobile {
+        font-size: $font-size-xs;
+      }
     }
 
     .metric-value {
-      font-size: 28px;
-      font-weight: bold;
-      margin-bottom: 5px;
+      font-size: $font-size-3xl;
+      font-weight: $font-weight-bold;
+      margin-bottom: $spacing-xs;
+      
+      @include mobile {
+        font-size: $font-size-xl;
+      }
     }
 
     .metric-change {
-      font-size: 13px;
+      font-size: $font-size-xs;
+      
+      @include mobile {
+        font-size: 11px;
+      }
 
       &.up {
         color: var(--success-color);
@@ -472,10 +554,22 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+    
+    span {
+      @include mobile {
+        font-size: $font-size-sm;
+      }
+    }
   }
 
   .chart-container {
     height: 300px;
+    
+    @include mobile {
+      height: 250px;
+    }
   }
 
   .mono {
@@ -483,27 +577,27 @@ onMounted(() => {
   }
 
   .signal-timeline {
-    padding: 10px 0;
+    padding: $spacing-md 0;
     max-height: 350px;
     overflow-y: auto;
 
     .signal-content {
       strong {
         display: block;
-        margin-bottom: 5px;
+        margin-bottom: $spacing-xs;
       }
 
       p {
-        margin: 5px 0;
-        font-size: 13px;
+        margin: $spacing-xs 0;
+        font-size: $font-size-xs;
         color: var(--text-secondary);
       }
 
       .signal-meta {
         display: flex;
-        gap: 15px;
-        margin-top: 5px;
-        font-size: 12px;
+        gap: $spacing-lg;
+        margin-top: $spacing-xs;
+        font-size: $font-size-xs;
         color: var(--text-secondary);
       }
     }

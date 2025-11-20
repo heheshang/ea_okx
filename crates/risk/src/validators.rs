@@ -331,8 +331,8 @@ mod tests {
             Symbol::new("BTC-USDT").unwrap(),
             OrderSide::Buy,
             ea_okx_core::models::OrderType::Iceberg,
-            ea_okx_core::Price::new(price).unwrap(),
             Quantity::new(qty).unwrap(),
+            ea_okx_core::Price::new(price).unwrap(),
         )
     }
 

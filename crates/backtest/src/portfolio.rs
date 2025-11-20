@@ -215,9 +215,9 @@ mod tests {
             symbol.clone(),
             OrderSide::Buy,
             ea_okx_core::OrderType::Market,
-            OrderSide::Buy,
+                      ea_okx_core::Quantity::new(dec!(0.1)).unwrap(),
             ea_okx_core::Price::new(dec!(50000.0)).unwrap(),
-            ea_okx_core::Quantity::new(dec!(0.1)).unwrap(),
+  
         );
         
         let fill = Fill {

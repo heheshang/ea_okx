@@ -1,0 +1,55 @@
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+/target/doc/
+
+# Build artifacts
+/dist/
+/build/
+
+# Frontend
+node_modules/
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.nuxt/
+
+# Test coverage
+tarpaulin-report.html
+cobertura.xml
+
+# Benchmarks
+/benches/target/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak

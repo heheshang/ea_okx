@@ -1,0 +1,83 @@
+[workspace]
+members = [
+    "crates/core",
+    "crates/okx-client",
+    "crates/data", "crates/strategy", "crates/backtest", "crates/trading", "crates/risk",  "crates/monitoring",
+]
+resolver = "2"
+default-members = []
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["EA OKX Team"]
+license = "MIT"
+repository = "https://github.com/ea-okx/quantitative-trading"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.35", features = ["full"] }
+tokio-tungstenite = "0.21"
+
+# Web framework
+axum = { version = "0.7", features = ["ws", "macros"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "rust_decimal"] }
+redis = { version = "0.24", features = ["tokio-comp", "connection-manager"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Data types
+rust_decimal = { version = "1.33", features = ["serde"] }
+rust_decimal_macros = "1.33"
+uuid = { version = "1.6", features = ["serde", "v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging and tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# HTTP client
+reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+
+# Concurrency
+crossbeam = "0.8"
+parking_lot = "0.12"
+rayon = "1.8"
+
+# Configuration
+config = "0.13"
+dotenvy = "0.15"
+
+# Security
+argon2 = "0.5"
+jsonwebtoken = "9.2"
+hmac = "0.12"
+sha2 = "0.10"
+
+# Utilities
+bytes = "1.5"
+futures = "0.3"
+async-trait = "0.1"
+
+# Metrics
+metrics = "0.21"
+metrics-exporter-prometheus = "0.13"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+[profile.bench]
+inherits = "release"

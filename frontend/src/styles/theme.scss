@@ -1,0 +1,207 @@
+// Element Plus Theme Customization
+
+// Dark theme Element Plus overrides
+:root[data-theme='dark'] {
+  // Element Plus CSS Variables
+  --el-bg-color: #1c2128;
+  --el-bg-color-page: #0f1419;
+  --el-bg-color-overlay: #2d333b;
+  --el-text-color-primary: #e6edf3;
+  --el-text-color-regular: #adbac7;
+  --el-text-color-secondary: #768390;
+  --el-text-color-placeholder: #636e7b;
+  --el-text-color-disabled: #484f58;
+  --el-border-color: #444c56;
+  --el-border-color-light: #373e47;
+  --el-border-color-lighter: #2d333b;
+  --el-border-color-extra-light: #21262d;
+  --el-fill-color: #2d333b;
+  --el-fill-color-light: #373e47;
+  --el-fill-color-lighter: #444c56;
+  --el-fill-color-extra-light: #4c5562;
+  --el-fill-color-dark: #21262d;
+  --el-fill-color-darker: #1c2128;
+  --el-fill-color-blank: transparent;
+  
+  // Custom colors
+  --el-color-primary: #539bf5;
+  --el-color-success: #57ab5a;
+  --el-color-warning: #c69026;
+  --el-color-danger: #e5534b;
+  --el-color-error: #e5534b;
+  --el-color-info: #768390;
+  
+  // Card
+  --el-card-bg-color: #1c2128;
+  --el-card-border-color: #444c56;
+  
+  // Menu
+  --el-menu-bg-color: #1c2128;
+  --el-menu-hover-bg-color: #2d333b;
+  --el-menu-text-color: #adbac7;
+  --el-menu-active-color: #539bf5;
+  
+  // Table
+  --el-table-bg-color: #1c2128;
+  --el-table-tr-bg-color: #1c2128;
+  --el-table-header-bg-color: #2d333b;
+  --el-table-row-hover-bg-color: #2d333b;
+  --el-table-border-color: #444c56;
+  
+  // Input
+  --el-input-bg-color: #2d333b;
+  --el-input-border-color: #444c56;
+  --el-input-hover-border-color: #539bf5;
+  --el-input-focus-border-color: #539bf5;
+  --el-input-text-color: #e6edf3;
+  --el-input-placeholder-color: #768390;
+  
+  // Dialog
+  --el-dialog-bg-color: #2d333b;
+  --el-dialog-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  
+  // Dropdown
+  --el-dropdown-menu-box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.5);
+  
+  // Message Box
+  --el-messagebox-bg-color: #2d333b;
+  
+  // Notification
+  --el-notification-bg-color: #2d333b;
+  
+  // Popover
+  --el-popover-bg-color: #2d333b;
+  
+  // Tooltip
+  --el-tooltip-bg-color: #2d333b;
+  
+  // Tag
+  --el-tag-bg-color: #2d333b;
+  
+  // Scrollbar
+  --el-scrollbar-bg-color: #2d333b;
+  --el-scrollbar-hover-bg-color: #444c56;
+}
+
+// Light theme Element Plus overrides
+:root[data-theme='light'] {
+  // Element Plus CSS Variables
+  --el-bg-color: #ffffff;
+  --el-bg-color-page: #f6f8fa;
+  --el-bg-color-overlay: #ffffff;
+  --el-text-color-primary: #1f2328;
+  --el-text-color-regular: #59636e;
+  --el-text-color-secondary: #848d97;
+  --el-text-color-placeholder: #9ea7b1;
+  --el-text-color-disabled: #bfc5cc;
+  --el-border-color: #d0d7de;
+  --el-border-color-light: #d8dee4;
+  --el-border-color-lighter: #e1e4e8;
+  --el-border-color-extra-light: #eaeef2;
+  --el-fill-color: #f6f8fa;
+  --el-fill-color-light: #eaeef2;
+  --el-fill-color-lighter: #e1e4e8;
+  --el-fill-color-extra-light: #d8dee4;
+  --el-fill-color-dark: #d0d7de;
+  --el-fill-color-darker: #afb8c1;
+  --el-fill-color-blank: transparent;
+  
+  // Custom colors
+  --el-color-primary: #0969da;
+  --el-color-success: #1a7f37;
+  --el-color-warning: #9a6700;
+  --el-color-danger: #cf222e;
+  --el-color-error: #cf222e;
+  --el-color-info: #59636e;
+  
+  // Card
+  --el-card-bg-color: #ffffff;
+  --el-card-border-color: #d0d7de;
+  
+  // Menu
+  --el-menu-bg-color: #f6f8fa;
+  --el-menu-hover-bg-color: #eaeef2;
+  --el-menu-text-color: #59636e;
+  --el-menu-active-color: #0969da;
+  
+  // Table
+  --el-table-bg-color: #ffffff;
+  --el-table-tr-bg-color: #ffffff;
+  --el-table-header-bg-color: #f6f8fa;
+  --el-table-row-hover-bg-color: #f6f8fa;
+  --el-table-border-color: #d0d7de;
+  
+  // Input
+  --el-input-bg-color: #ffffff;
+  --el-input-border-color: #d0d7de;
+  --el-input-hover-border-color: #0969da;
+  --el-input-focus-border-color: #0969da;
+  --el-input-text-color: #1f2328;
+  --el-input-placeholder-color: #848d97;
+  
+  // Dialog
+  --el-dialog-bg-color: #ffffff;
+  --el-dialog-box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  
+  // Dropdown
+  --el-dropdown-menu-box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  
+  // Message Box
+  --el-messagebox-bg-color: #ffffff;
+  
+  // Notification
+  --el-notification-bg-color: #ffffff;
+  
+  // Popover
+  --el-popover-bg-color: #ffffff;
+  
+  // Tooltip
+  --el-tooltip-bg-color: #1f2328;
+  
+  // Tag
+  --el-tag-bg-color: #f6f8fa;
+  
+  // Scrollbar
+  --el-scrollbar-bg-color: #d0d7de;
+  --el-scrollbar-hover-bg-color: #afb8c1;
+}
+
+// Global Element Plus overrides
+.el-card {
+  &:hover {
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  }
+}
+
+.el-table {
+  --el-table-border: 1px solid var(--border-color);
+  
+  th.el-table__cell {
+    background-color: var(--bg-tertiary) !important;
+  }
+}
+
+// Scrollbar customization
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+  
+  &:hover {
+    background: var(--text-muted);
+  }
+}
+
+// Chart containers
+.chart-container {
+  background-color: transparent !important;
+  border-radius: 4px;
+}

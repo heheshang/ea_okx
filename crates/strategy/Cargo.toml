@@ -1,0 +1,38 @@
+[package]
+name = "ea-okx-strategy"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+ea-okx-core = { path = "../core" }
+# ea-okx-data = { path = "../data" }  # Temporarily disabled due to sqlx macro compile-time requirements
+
+# Async
+tokio = { workspace = true }
+futures = { workspace = true }
+async-trait = "0.1"
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Data types
+chrono = { workspace = true }
+uuid = { workspace = true }
+rust_decimal = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# Utilities
+parking_lot = { workspace = true }
+
+[dev-dependencies]
+rust_decimal_macros = { workspace = true }
+tokio-test = "0.4"

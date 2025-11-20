@@ -1,0 +1,48 @@
+[package]
+name = "ea-okx-client"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+ea-okx-core = { path = "../core" }
+
+# Async
+tokio = { workspace = true }
+tokio-tungstenite = { workspace = true }
+futures = { workspace = true }
+
+# HTTP
+reqwest = { workspace = true }
+tower = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Data types
+chrono = { workspace = true }
+uuid = { workspace = true }
+rust_decimal = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Crypto
+hmac = { workspace = true }
+sha2 = { workspace = true }
+base64 = "0.21"
+
+# Logging
+tracing = { workspace = true }
+
+# Utilities
+bytes = { workspace = true }
+url = "2.5"
+
+[dev-dependencies]
+wiremock = "0.6"
+tokio-test = "0.4"
+tracing-subscriber = { workspace = true }

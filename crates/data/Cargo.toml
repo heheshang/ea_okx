@@ -1,0 +1,44 @@
+[package]
+name = "ea-okx-data"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+ea-okx-core = { path = "../core" }
+ea-okx-client = { path = "../okx-client" }
+
+# Async
+tokio = { workspace = true }
+futures = { workspace = true }
+
+# Database
+sqlx = { workspace = true }
+redis = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Data types
+chrono = { workspace = true }
+uuid = { workspace = true }
+rust_decimal = { workspace = true }
+rust_decimal_macros = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Logging
+tracing = { workspace = true }
+
+# Concurrency
+parking_lot = { workspace = true }
+
+# Statistics
+statrs = "0.16"
+
+[dev-dependencies]
+tokio-test = "0.4"

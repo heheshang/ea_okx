@@ -1013,6 +1013,7 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '../styles/utilities.scss';
 .create-template-dialog {
   :deep(.el-dialog__body) {
     padding: 0;

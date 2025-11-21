@@ -63,7 +63,6 @@ use tracing::{debug, error, info, warn};
 /// OKX WebSocket API URLs
 const WS_PUBLIC_URL: &str = "wss://ws.okx.com:8443/ws/v5/public";
 const WS_PRIVATE_URL: &str = "wss://ws.okx.com:8443/ws/v5/private";
-const WS_BUSINESS_URL: &str = "wss://ws.okx.com:8443/ws/v5/business";
 
 const WS_PUBLIC_TESTNET_URL: &str = "wss://wspap.okx.com:8443/ws/v5/public?brokerId=9999";
 const WS_PRIVATE_TESTNET_URL: &str = "wss://wspap.okx.com:8443/ws/v5/private?brokerId=9999";

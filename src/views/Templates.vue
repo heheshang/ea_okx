@@ -1,205 +1,201 @@
 <template>
   <div class="templates-view">
-    <MainLayout>
-      <template #content>
-        <div class="templates-container">
-          <!-- Page Header -->
-          <div class="page-header">
-            <div class="header-content">
-              <div class="header-left">
-                <h1 class="page-title">
-                  <span class="title-icon">📋</span>
-                  Strategy Templates
-                </h1>
-                <p class="page-subtitle">
-                  Browse, create, and import trading strategy templates
-                </p>
-              </div>
+    <div class="templates-container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="header-content">
+          <div class="header-left">
+            <h1 class="page-title">
+              <span class="title-icon">📋</span>
+              Strategy Templates
+            </h1>
+            <p class="page-subtitle">
+              Browse, create, and import trading strategy templates
+            </p>
+          </div>
 
-              <div class="header-actions">
-                <el-button
-                  type="primary"
-                  :icon="Plus"
-                  @click="showCreateDialog = true"
-                >
-                  Create Template
-                </el-button>
-                <el-button
-                  :icon="Upload"
-                  @click="showImportDialog = true"
-                >
-                  Import Template
-                </el-button>
-              </div>
-            </div>
+          <div class="header-actions">
+            <el-button
+              type="primary"
+              :icon="Plus"
+              @click="showCreateDialog = true"
+            >
+              Create Template
+            </el-button>
+            <el-button
+              :icon="Upload"
+              @click="showImportDialog = true"
+            >
+              Import Template
+            </el-button>
+          </div>
+        </div>
 
-            <!-- Quick Stats -->
-            <div class="quick-stats">
-              <div class="stat-card">
-                <div class="stat-icon">📚</div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ stats.totalTemplates }}</div>
-                  <div class="stat-label">Total Templates</div>
-                </div>
-              </div>
-
-              <div class="stat-card">
-                <div class="stat-icon">⭐</div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ stats.premiumTemplates }}</div>
-                  <div class="stat-label">Premium</div>
-                </div>
-              </div>
-
-              <div class="stat-card">
-                <div class="stat-icon">👥</div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ stats.communityTemplates }}</div>
-                  <div class="stat-label">Community</div>
-                </div>
-              </div>
-
-              <div class="stat-card">
-                <div class="stat-icon">🏗️</div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ stats.builtInTemplates }}</div>
-                  <div class="stat-label">Built-in</div>
-                </div>
-              </div>
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+          <div class="stat-card">
+            <div class="stat-icon">📚</div>
+            <div class="stat-content">
+              <div class="stat-value">{{ stats.totalTemplates }}</div>
+              <div class="stat-label">Total Templates</div>
             </div>
           </div>
 
-          <!-- Main Content -->
-          <div class="main-content">
-            <!-- Featured Templates -->
-            <div v-if="!loading && featuredTemplates.length > 0" class="featured-section">
-              <div class="section-header">
-                <h2>Featured Templates</h2>
-                <el-button type="text" @click="viewAllFeatured">
-                  View All
-                  <el-icon><ArrowRight /></el-icon>
-                </el-button>
-              </div>
-
-              <div class="featured-grid">
-                <div
-                  v-for="template in featuredTemplates"
-                  :key="template.id"
-                  class="featured-template"
-                >
-                  <TemplateCard
-                    :template="template"
-                    @select="handleTemplateSelect"
-                    @preview="handleTemplatePreview"
-                    @create-strategy="handleCreateStrategy"
-                  />
-                </div>
-              </div>
+          <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-content">
+              <div class="stat-value">{{ stats.premiumTemplates }}</div>
+              <div class="stat-label">Premium</div>
             </div>
+          </div>
 
-            <!-- Template Browser -->
-            <div class="browser-section">
-              <div class="section-header">
-                <h2>Browse Templates</h2>
-                <div class="section-actions">
-                  <el-button-group>
-                    <el-button
-                      :type="viewMode === 'grid' ? 'primary' : 'default'"
-                      @click="viewMode = 'grid'"
-                      :icon="Grid"
-                    >
-                      Grid
-                    </el-button>
-                    <el-button
-                      :type="viewMode === 'list' ? 'primary' : 'default'"
-                      @click="viewMode = 'list'"
-                      :icon="List"
-                    >
-                      List
-                    </el-button>
-                  </el-button-group>
-                </div>
-              </div>
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+              <div class="stat-value">{{ stats.communityTemplates }}</div>
+              <div class="stat-label">Community</div>
+            </div>
+          </div>
 
-              <TemplateBrowser
-                :view-mode="viewMode"
-                @template-select="handleTemplateSelect"
-                @template-preview="handleTemplatePreview"
+          <div class="stat-card">
+            <div class="stat-icon">🏗️</div>
+            <div class="stat-content">
+              <div class="stat-value">{{ stats.builtInTemplates }}</div>
+              <div class="stat-label">Built-in</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Featured Templates -->
+        <div v-if="!loading && featuredTemplates.length > 0" class="featured-section">
+          <div class="section-header">
+            <h2>Featured Templates</h2>
+            <el-button type="text" @click="viewAllFeatured">
+              View All
+              <el-icon><ArrowRight /></el-icon>
+            </el-button>
+          </div>
+
+          <div class="featured-grid">
+            <div
+              v-for="template in featuredTemplates"
+              :key="template.id"
+              class="featured-template"
+            >
+              <TemplateCard
+                :template="template"
+                @select="handleTemplateSelect"
+                @preview="handleTemplatePreview"
                 @create-strategy="handleCreateStrategy"
-                @template-created="handleTemplateCreated"
-                @template-imported="handleTemplateImported"
               />
-            </div>
-          </div>
-
-          <!-- Recommended Templates -->
-          <div v-if="recommendedTemplates.length > 0" class="recommended-section">
-            <div class="section-header">
-              <h2>Recommended for You</h2>
-              <el-button type="text" @click="refreshRecommendations">
-                <el-icon><Refresh /></el-icon>
-                Refresh
-              </el-button>
-            </div>
-
-            <div class="recommended-grid">
-              <div
-                v-for="item in recommendedTemplates"
-                :key="item.template.id"
-                class="recommended-item"
-              >
-                <div class="recommendation-card">
-                  <div class="recommendation-header">
-                    <h4>{{ item.template.name }}</h4>
-                    <el-tag size="small" type="success">
-                      {{ Math.round(item.confidence * 100) }}% match
-                    </el-tag>
-                  </div>
-
-                  <p class="recommendation-reason">{{ item.reason }}</p>
-
-                  <div class="recommendation-actions">
-                    <el-button
-                      size="small"
-                      @click="handleTemplatePreview(item.template)"
-                    >
-                      Preview
-                    </el-button>
-                    <el-button
-                      type="primary"
-                      size="small"
-                      @click="handleCreateStrategy(item.template)"
-                    >
-                      Use Template
-                    </el-button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
 
-        <!-- Dialogs -->
-        <TemplatePreviewDialog
-          v-model="showPreviewDialog"
-          :template="selectedTemplate"
-          @create-strategy="handleCreateStrategy"
-          @preview-performance="handlePreviewPerformance"
-        />
+        <!-- Template Browser -->
+        <div class="browser-section">
+          <div class="section-header">
+            <h2>Browse Templates</h2>
+            <div class="section-actions">
+              <el-button-group>
+                <el-button
+                  :type="viewMode === 'grid' ? 'primary' : 'default'"
+                  @click="viewMode = 'grid'"
+                  :icon="Grid"
+                >
+                  Grid
+                </el-button>
+                <el-button
+                  :type="viewMode === 'list' ? 'primary' : 'default'"
+                  @click="viewMode = 'list'"
+                  :icon="List"
+                >
+                  List
+                </el-button>
+              </el-button-group>
+            </div>
+          </div>
 
-        <CreateTemplateDialog
-          v-model="showCreateDialog"
-          @created="handleTemplateCreated"
-        />
+          <TemplateBrowser
+            :view-mode="viewMode"
+            @template-select="handleTemplateSelect"
+            @template-preview="handleTemplatePreview"
+            @create-strategy="handleCreateStrategy"
+            @template-created="handleTemplateCreated"
+            @template-imported="handleTemplateImported"
+          />
+        </div>
+      </div>
 
-        <ImportTemplateDialog
-          v-model="showImportDialog"
-          @imported="handleTemplateImported"
-        />
-      </template>
-    </MainLayout>
+      <!-- Recommended Templates -->
+      <div v-if="recommendedTemplates.length > 0" class="recommended-section">
+        <div class="section-header">
+          <h2>Recommended for You</h2>
+          <el-button type="text" @click="refreshRecommendations">
+            <el-icon><Refresh /></el-icon>
+            Refresh
+          </el-button>
+        </div>
+
+        <div class="recommended-grid">
+          <div
+            v-for="item in recommendedTemplates"
+            :key="item.template.id"
+            class="recommended-item"
+          >
+            <div class="recommendation-card">
+              <div class="recommendation-header">
+                <h4>{{ item.template.name }}</h4>
+                <el-tag size="small" type="success">
+                  {{ Math.round(item.confidence * 100) }}% match
+                </el-tag>
+              </div>
+
+              <p class="recommendation-reason">{{ item.reason }}</p>
+
+              <div class="recommendation-actions">
+                <el-button
+                  size="small"
+                  @click="handleTemplatePreview(item.template)"
+                >
+                  Preview
+                </el-button>
+                <el-button
+                  type="primary"
+                  size="small"
+                  @click="handleCreateStrategy(item.template)"
+                >
+                  Use Template
+                </el-button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dialogs -->
+      <TemplatePreviewDialog
+        v-model="showPreviewDialog"
+        :template="selectedTemplate"
+        @create-strategy="handleCreateStrategy"
+        @preview-performance="handlePreviewPerformance"
+      />
+
+      <CreateTemplateDialog
+        v-model="showCreateDialog"
+        @created="handleTemplateCreated"
+      />
+
+      <ImportTemplateDialog
+        v-model="showImportDialog"
+        @imported="handleTemplateImported"
+      />
+    </div>
   </div>
-</template>
+</template> 
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
@@ -219,7 +215,7 @@ import TemplateCard from '@/components/TemplateCard.vue'
 import TemplatePreviewDialog from '@/components/TemplatePreviewDialog.vue'
 import CreateTemplateDialog from '@/components/CreateTemplateDialog.vue'
 import ImportTemplateDialog from '@/components/ImportTemplateDialog.vue'
-import type { StrategyTemplate, TemplateRecommendation } from '@/types/strategyTemplate'
+import type { StrategyTemplate, TemplateRecommendation, StrategyTemplateListResponse } from '@/types/strategyTemplate'
 import { strategyTemplateService } from '@/services/strategyTemplateService'
 
 const router = useRouter()
@@ -254,13 +250,17 @@ const loadTemplates = async () => {
       limit: 50,
       sortBy: 'popularity',
       sortOrder: 'desc'
-    })
+    }) as StrategyTemplateListResponse & { success?: boolean; error?: string }
 
     if (response.success) {
       templates.value = response.templates || []
       updateStats()
-    } else {
+    } else if (response.error) {
       ElMessage.error(response.error || 'Failed to load templates')
+    } else {
+      // Direct response without success/error wrapper
+      templates.value = response.templates || []
+      updateStats()
     }
   } catch (error) {
     console.error('Failed to load templates:', error)
@@ -372,6 +372,7 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
+@import '../styles/utilities.scss';
 .templates-view {
   min-height: 100vh;
   background: var(--bg-primary);

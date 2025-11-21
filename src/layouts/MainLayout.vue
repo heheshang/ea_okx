@@ -100,7 +100,8 @@ const sidebarWidth = computed(() => '200px')
 // Cache main views for faster switching (exclude detail pages)
 const cachedViews = ref([
   'Dashboard',
-  'Strategies', 
+  'Strategies',
+  'Templates',
   'Backtest',
   'Trading',
   'Risk',

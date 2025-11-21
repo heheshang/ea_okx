@@ -19,6 +19,7 @@ pub enum StrategyStatus {
     Active,
     Paused,
     Stopped,
+    Error,
     Archived,
 }
 
@@ -34,6 +35,7 @@ impl FromStr for StrategyStatus {
             "active" => Ok(StrategyStatus::Active),
             "paused" => Ok(StrategyStatus::Paused),
             "stopped" => Ok(StrategyStatus::Stopped),
+            "error" => Ok(StrategyStatus::Error),
             "archived" => Ok(StrategyStatus::Archived),
             _ => Err(Error::ValidationError(format!(
                 "Invalid strategy status: {}",
@@ -140,6 +142,12 @@ pub struct Strategy {
 
     /// Stop time
     pub stopped_at: Option<DateTime<Utc>>,
+
+    /// Performance metrics
+    pub performance_metrics: Option<StrategyMetrics>,
+
+    /// Last active time
+    pub last_active_at: Option<DateTime<Utc>>,
 }
 
 impl Strategy {
@@ -168,6 +176,8 @@ impl Strategy {
             updated_at: now,
             deployed_at: None,
             stopped_at: None,
+            performance_metrics: None,
+            last_active_at: None,
         })
     }
 
@@ -198,6 +208,61 @@ impl Strategy {
             self.status,
             StrategyStatus::Active | StrategyStatus::PaperTrading
         )
+    }
+}
+
+/// Strategy performance metrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StrategyMetrics {
+    pub total_trades: u64,
+    pub win_rate: f64,
+    pub total_pnl: f64,
+    pub total_return: f64,
+    pub sharpe_ratio: f64,
+    pub max_drawdown: f64,
+    pub profit_factor: f64,
+    pub average_win: f64,
+    pub average_loss: f64,
+    pub largest_win: f64,
+    pub largest_loss: f64,
+}
+
+/// Response types for API
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StrategyResponse<T> {
+    pub success: bool,
+    pub data: Option<T>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StrategyListResponse {
+    pub strategies: Vec<Strategy>,
+    pub total: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StrategyFilter {
+    pub status: Option<StrategyStatus>,
+    pub strategy_type: Option<String>,
+    pub symbol: Option<Symbol>,
+    pub sort_by: Option<String>,
+    pub sort_order: Option<String>,
+    pub limit: Option<usize>,
+    pub offset: Option<usize>,
+}
+
+impl Default for StrategyFilter {
+    fn default() -> Self {
+        Self {
+            status: None,
+            strategy_type: None,
+            symbol: None,
+            sort_by: Some("updated_at".to_string()),
+            sort_order: Some("desc".to_string()),
+            limit: Some(50),
+            offset: Some(0),
+        }
     }
 }
 

@@ -22,7 +22,7 @@
                 v-if="template.isPremium"
                 type="warning"
                 size="small"
-                :icon="Crown"
+                :icon="Star"
               >
                 Premium
               </el-tag>
@@ -245,9 +245,8 @@ import {
   CopyDocument,
   Download,
   Delete,
-  Crown,
-  Box,
   Star,
+  Box,
   User
 } from '@element-plus/icons-vue'
 import type { StrategyTemplate } from '@/types/strategyTemplate'

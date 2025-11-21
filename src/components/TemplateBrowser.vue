@@ -373,6 +373,7 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+@import '../styles/utilities.scss';
 .template-browser {
   padding: var(--spacing-lg);
   max-width: 1400px;

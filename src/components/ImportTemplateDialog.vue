@@ -506,6 +506,7 @@ watch(visible, (val) => {
 </script>
 
 <style lang="scss" scoped>
+@import '../styles/utilities.scss';
 .import-template-dialog {
   :deep(.el-dialog__body) {
     padding: var(--spacing-lg);

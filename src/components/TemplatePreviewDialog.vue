@@ -17,7 +17,7 @@
               <el-tag :type="getDifficultyType(template.difficulty)">
                 {{ template.difficulty }}
               </el-tag>
-              <el-tag v-if="template.isPremium" type="warning" :icon="Crown">
+              <el-tag v-if="template.isPremium" type="warning" :icon="Star">
                 Premium
               </el-tag>
               <el-tag v-if="template.isBuiltIn" type="info" :icon="Box">
@@ -358,7 +358,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Star, Download, User, Crown, Box } from '@element-plus/icons-vue'
+import { Star, Download, User, Box } from '@element-plus/icons-vue'
 import type { StrategyTemplate } from '@/types/strategyTemplate'
 import { StrategyType } from '@/types/strategy'
 
@@ -467,6 +467,7 @@ const handlePreviewPerformance = () => {
 </script>
 
 <style lang="scss" scoped>
+@import '../styles/utilities.scss';
 .template-preview-dialog {
   :deep(.el-dialog__body) {
     padding: 0;

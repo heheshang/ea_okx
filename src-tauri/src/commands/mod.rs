@@ -5,3 +5,4 @@ pub mod trading;
 pub mod data;
 pub mod risk;
 pub mod system;
+pub mod websocket;
